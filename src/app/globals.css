@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #121212;
+  --header: #12121a;
+  --muted: #6b6b6b;
+  --band: #1a1a24;
+  --band-card: #303030;
+  --gold: #c9a227;
+  --star: #ffbb29;
+  --border: rgba(255, 255, 255, 0.18);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-header: var(--header);
+  --color-muted: var(--muted);
+  --color-band: var(--band);
+  --color-band-card: var(--band-card);
+  --color-gold: var(--gold);
+  --color-star: var(--star);
+  --font-sans: var(--font-assistant);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-assistant), system-ui, sans-serif;
+}
+
+a {
+  text-underline-offset: 0.2em;
+}
+
+::selection {
+  background: rgba(201, 162, 39, 0.35);
+}
