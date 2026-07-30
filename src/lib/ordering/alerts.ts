@@ -22,7 +22,11 @@ export function evaluateAlerts(
   const alerts = new Set<string>();
 
   if (opts?.dedicatedTrip) alerts.add("Dedicated-trip request");
-  if (draft.declaredValueDollars >= cfg.alerts.highDeclaredValueDollars) {
+  const declaredTotal = draft.items.reduce(
+    (sum, item) => sum + Math.max(0, Number(item.declaredValueDollars) || 0),
+    0
+  );
+  if (declaredTotal >= cfg.alerts.highDeclaredValueDollars) {
     alerts.add("Very high declared value");
   }
 

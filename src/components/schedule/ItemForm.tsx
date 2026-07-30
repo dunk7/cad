@@ -1,12 +1,7 @@
 "use client";
 
 import { DECOR_NAMES, FURNITURE_NAMES, SIZE_CLASSES } from "@/lib/ordering/catalog";
-import type {
-  CategoryId,
-  MeasureUnit,
-  OrderItem,
-  WeightUnit,
-} from "@/lib/ordering/types";
+import type { CategoryId, OrderItem, WeightUnit } from "@/lib/ordering/types";
 import { useOrder } from "@/lib/ordering/OrderContext";
 import { useRef, useState } from "react";
 
@@ -27,8 +22,8 @@ const WRAP_OPTIONS = [
   "Wrapped in plastic",
   "Wrapped in bubble wrap",
   "Blanket wrapped",
-  "In a box",
-  "In a crate",
+  "In a cardboard box",
+  "In a wooden crate",
   "Hanging on a wall",
   "Unwrapped",
   "Not sure",
@@ -47,6 +42,9 @@ const HARDWARE = [
   "Other",
 ];
 
+/** Temporarily hidden — set to true to restore photograph uploads. */
+const SHOW_PHOTO_UPLOAD = false;
+
 type Props = {
   category: CategoryId;
   initial?: OrderItem;
@@ -55,7 +53,7 @@ type Props = {
 };
 
 export default function ItemForm({ category, initial, onSave, onCancel }: Props) {
-  const { draft, newItemId } = useOrder();
+  const { newItemId } = useOrder();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => ({
@@ -66,13 +64,14 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
     height: initial?.height ?? "",
     width: initial?.width ?? "",
     depth: initial?.depth ?? "",
-    measureUnit: initial?.measureUnit || draft.measureUnitDefault,
+    measureUnit: "in",
     weight: initial?.weight ?? "",
     weightUnit: "lb",
     specialInstructions: initial?.specialInstructions || "",
     photoUrls: initial?.photoUrls || [],
     existingDamage: initial?.existingDamage || "no",
     damageNotes: initial?.damageNotes || "",
+    declaredValueDollars: initial?.declaredValueDollars ?? "",
   }));
 
   function set<K extends string>(key: K, value: unknown) {
@@ -99,7 +98,6 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const measureUnit = form.measureUnit as MeasureUnit;
     const base = {
       id: String(form.id),
       category,
@@ -107,13 +105,17 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       height: form.height === "" ? undefined : Number(form.height),
       width: form.width === "" ? undefined : Number(form.width),
       depth: form.depth === "" ? undefined : Number(form.depth),
-      measureUnit,
+      measureUnit: "in" as const,
       weight: form.weight === "" ? undefined : Number(form.weight),
       weightUnit: "lb" as WeightUnit,
       specialInstructions: String(form.specialInstructions || ""),
       photoUrls: (form.photoUrls as string[]) || [],
       existingDamage: form.existingDamage as "yes" | "no" | "unsure",
       damageNotes: String(form.damageNotes || ""),
+      declaredValueDollars:
+        form.declaredValueDollars === ""
+          ? 0
+          : Math.max(0, Number(form.declaredValueDollars) || 0),
     };
 
     let item: OrderItem;
@@ -130,11 +132,15 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         category: "paintings",
         pieceType: String(form.pieceType || "Painting or framed artwork"),
         pieceDescription: String(form.pieceDescription || ""),
-        framed: form.framed as "yes" | "no" | "unsure",
-        frameSizeWeight: String(form.frameSizeWeight || ""),
-        frameCharacteristics: (form.frameCharacteristics as string[]) || [],
-        frameOther: String(form.frameOther || ""),
-        glazing: String(form.glazing || ""),
+        framed: askAboutFrame
+          ? (form.framed as "yes" | "no" | "unsure")
+          : "no",
+        frameSizeWeight: askAboutFrame ? String(form.frameSizeWeight || "") : "",
+        frameCharacteristics: askAboutFrame
+          ? (form.frameCharacteristics as string[]) || []
+          : [],
+        frameOther: askAboutFrame ? String(form.frameOther || "") : "",
+        glazing: "",
         currentWrapping: String(form.currentWrapping || ""),
         hardware: String(form.hardware || ""),
         removeFromWall: Boolean(form.removeFromWall),
@@ -143,8 +149,8 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         installHeight: String(form.installHeight || ""),
         wallMaterial: String(form.wallMaterial || ""),
         aboveStairs: String(form.aboveStairs || ""),
-        obstacleBeneath: Boolean(form.obstacleBeneath),
-        obstacleNotes: String(form.obstacleNotes || ""),
+        obstacleBeneath: false,
+        obstacleNotes: "",
         placementKnown: String(form.placementKnown || ""),
       };
     } else if (category === "sculptures") {
@@ -218,6 +224,14 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
   const field =
     "w-full border border-black/20 bg-white px-3 py-2.5 text-sm outline-none focus:border-black";
   const label = "mb-1 block text-sm font-medium text-foreground";
+
+  const heightIn = form.height === "" ? NaN : Number(form.height);
+  const widthIn = form.width === "" ? NaN : Number(form.width);
+  const askAboutFrame =
+    category === "paintings" &&
+    Number.isFinite(heightIn) &&
+    Number.isFinite(widthIn) &&
+    (heightIn >= 48 || widthIn >= 48);
 
   return (
     <form onSubmit={submit} className="space-y-5 rounded-lg border border-black/10 bg-[#fafafa] p-4 sm:p-6">
@@ -314,38 +328,25 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {category !== "paintings" && (
-          <div>
-            <label className={label}>Quantity</label>
-            <input
-              type="number"
-              min={1}
-              inputMode="numeric"
-              className={field}
-              value={Number(form.quantity) || 1}
-              onChange={(e) => set("quantity", e.target.value)}
-            />
-          </div>
-        )}
-        <div className={category === "paintings" ? "sm:col-span-2" : ""}>
-          <label className={label}>Measurement unit</label>
-          <select
+      {category !== "paintings" && (
+        <div>
+          <label className={label}>Quantity</label>
+          <input
+            type="number"
+            min={1}
+            inputMode="numeric"
             className={field}
-            value={String(form.measureUnit)}
-            onChange={(e) => set("measureUnit", e.target.value)}
-          >
-            <option value="in">Inches</option>
-            <option value="ft">Feet</option>
-          </select>
+            value={Number(form.quantity) || 1}
+            onChange={(e) => set("quantity", e.target.value)}
+          />
         </div>
-      </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         {(["height", "width", "depth"] as const).map((dim) => (
           <div key={dim}>
             <label className={label}>
-              {dim[0].toUpperCase() + dim.slice(1)}
+              {dim[0].toUpperCase() + dim.slice(1)} (inches)
               {category === "sculptures" || dim !== "depth" ? " *" : ""}
             </label>
             <input
@@ -372,6 +373,28 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         />
       </div>
 
+      <div>
+        <label className={label}>Declared value (USD)</label>
+        <input
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step="1"
+          className={field}
+          value={
+            form.declaredValueDollars === undefined || form.declaredValueDollars === ""
+              ? ""
+              : String(form.declaredValueDollars)
+          }
+          onChange={(e) => set("declaredValueDollars", e.target.value)}
+          placeholder="0"
+        />
+        <p className="mt-1 text-xs text-muted">
+          Enter this item’s declared value. You can choose declared value protection when you
+          review your order.
+        </p>
+      </div>
+
       {(category === "furniture" || category === "decor") && (
         <div>
           <label className={label}>Which size best describes the item?</label>
@@ -389,72 +412,64 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
 
       {category === "paintings" && (
         <>
-          <div>
-            <label className={label}>Is this piece framed?</label>
-            <select
-              className={field}
-              value={String(form.framed || "no")}
-              onChange={(e) => set("framed", e.target.value)}
-            >
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
-              <option value="unsure">Not sure</option>
-            </select>
-          </div>
-          {form.framed === "yes" && (
+          {askAboutFrame && (
             <>
               <div>
-                <label className={label}>Frame size and weight</label>
+                <label className={label}>Is this piece framed?</label>
                 <select
                   className={field}
-                  value={String(form.frameSizeWeight || "Medium / Average")}
-                  onChange={(e) => set("frameSizeWeight", e.target.value)}
+                  value={String(form.framed || "no")}
+                  onChange={(e) => set("framed", e.target.value)}
                 >
-                  {["Small / Light", "Medium / Average", "Large / Heavy", "Not sure"].map(
-                    (o) => (
-                      <option key={o}>{o}</option>
-                    )
-                  )}
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="unsure">Not sure</option>
                 </select>
               </div>
-              <fieldset>
-                <legend className={label}>Frame characteristics</legend>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {FRAME_CHARS.map((c) => {
-                    const list = (form.frameCharacteristics as string[]) || [];
-                    const checked = list.includes(c);
-                    return (
-                      <label key={c} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() =>
-                            set(
-                              "frameCharacteristics",
-                              checked ? list.filter((x) => x !== c) : [...list, c]
-                            )
-                          }
-                        />
-                        {c}
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
+              {form.framed === "yes" && (
+                <>
+                  <div>
+                    <label className={label}>Frame size and weight</label>
+                    <select
+                      className={field}
+                      value={String(form.frameSizeWeight || "Medium / Average")}
+                      onChange={(e) => set("frameSizeWeight", e.target.value)}
+                    >
+                      {["Small / Light", "Medium / Average", "Large / Heavy", "Not sure"].map(
+                        (o) => (
+                          <option key={o}>{o}</option>
+                        )
+                      )}
+                    </select>
+                  </div>
+                  <fieldset>
+                    <legend className={label}>Frame characteristics</legend>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {FRAME_CHARS.map((c) => {
+                        const list = (form.frameCharacteristics as string[]) || [];
+                        const checked = list.includes(c);
+                        return (
+                          <label key={c} className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                set(
+                                  "frameCharacteristics",
+                                  checked ? list.filter((x) => x !== c) : [...list, c]
+                                )
+                              }
+                            />
+                            {c}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                </>
+              )}
             </>
           )}
-          <div>
-            <label className={label}>Does this piece contain glass or acrylic?</label>
-            <select
-              className={field}
-              value={String(form.glazing || "No")}
-              onChange={(e) => set("glazing", e.target.value)}
-            >
-              {["Glass", "Acrylic or Plexiglas", "No", "Not sure"].map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-          </div>
         </>
       )}
 
@@ -525,7 +540,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       )}
 
       <div>
-        <label className={label}>Existing damage or unusual fragility?</label>
+        <label className={label}>Existing damage?</label>
         <select
           className={field}
           value={String(form.existingDamage || "no")}
@@ -651,69 +666,63 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
                   <option>Not sure</option>
                 </select>
               </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={Boolean(form.obstacleBeneath)}
-                  onChange={(e) => set("obstacleBeneath", e.target.checked)}
-                />
-                Furniture, cabinetry, fireplace, or obstacle beneath the area
-              </label>
             </div>
           )}
         </>
       )}
 
-      <div>
-        <label className={label}>Photographs (optional, up to 10)</label>
-        <p className="mb-3 text-xs text-muted">
-          Photographs are optional, but they can help us better understand your items and may
-          improve pricing accuracy for larger, heavier, fragile, unusually valuable, or more
-          complex projects.
-        </p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="sr-only"
-          onChange={(e) => {
-            void onPhotos(e.target.files);
-            e.target.value = "";
-          }}
-        />
-        <button
-          type="button"
-          disabled={uploading || ((form.photoUrls as string[]) || []).length >= 10}
-          onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center border border-black bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {uploading ? "Uploading…" : "Add photos"}
-        </button>
-        {!!(form.photoUrls as string[])?.length && (
-          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {(form.photoUrls as string[]).map((url) => (
-              <div key={url} className="relative aspect-square overflow-hidden border border-black/10 bg-white">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  aria-label="Remove photo"
-                  onClick={() =>
-                    set(
-                      "photoUrls",
-                      ((form.photoUrls as string[]) || []).filter((u) => u !== url)
-                    )
-                  }
-                  className="absolute right-1 top-1 bg-black/75 px-1.5 py-0.5 text-xs text-white"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {SHOW_PHOTO_UPLOAD && (
+        <div>
+          <label className={label}>Photographs (optional, up to 10)</label>
+          <p className="mb-3 text-xs text-muted">
+            Photographs are optional, but they can help us better understand your items and may
+            improve pricing accuracy for larger, heavier, fragile, unusually valuable, or more
+            complex projects.
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            onChange={(e) => {
+              void onPhotos(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            disabled={uploading || ((form.photoUrls as string[]) || []).length >= 10}
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center border border-black bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {uploading ? "Uploading…" : "Add photos"}
+          </button>
+          {!!(form.photoUrls as string[])?.length && (
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {(form.photoUrls as string[]).map((url) => (
+                <div key={url} className="relative aspect-square overflow-hidden border border-black/10 bg-white">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    aria-label="Remove photo"
+                    onClick={() =>
+                      set(
+                        "photoUrls",
+                        ((form.photoUrls as string[]) || []).filter((u) => u !== url)
+                      )
+                    }
+                    className="absolute right-1 top-1 bg-black/75 px-1.5 py-0.5 text-xs text-white"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div>
         <label className={label}>Special instructions for this item</label>

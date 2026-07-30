@@ -22,7 +22,7 @@ export default function CategoriesStep() {
         </p>
       </header>
 
-      <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+      <div className="mt-10 grid grid-cols-2 gap-2 sm:gap-4">
         {CATEGORIES.map((cat) => {
           const selected = draft.categories.includes(cat.id);
           return (
@@ -44,8 +44,8 @@ export default function CategoriesStep() {
                 priority
                 className={`object-cover transition duration-500 ease-out group-hover:scale-[1.04] ${
                   selected ? "scale-[1.02]" : ""
-                }`}
-                sizes="(min-width: 640px) 40vw, 100vw"
+                } ${cat.id === "paintings" ? "object-center" : ""}`}
+                sizes="(min-width: 640px) 40vw, 50vw"
               />
 
               <div
@@ -75,12 +75,12 @@ export default function CategoriesStep() {
                 </svg>
               </div>
 
-              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                <span className="block text-[15px] font-medium tracking-tight text-white sm:text-lg">
+              <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-5">
+                <span className="block text-[12px] font-medium leading-snug tracking-tight text-white sm:text-lg">
                   {cat.name}
                 </span>
                 <span
-                  className={`mt-1 block text-[11px] uppercase tracking-[0.18em] transition duration-200 ${
+                  className={`mt-0.5 block text-[9px] uppercase tracking-[0.16em] transition duration-200 sm:mt-1 sm:text-[11px] sm:tracking-[0.18em] ${
                     selected ? "text-white/80" : "text-transparent"
                   }`}
                 >

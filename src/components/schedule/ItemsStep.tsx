@@ -3,8 +3,10 @@
 import { CATEGORIES } from "@/lib/ordering/catalog";
 import { useOrder } from "@/lib/ordering/OrderContext";
 import type { CategoryId, OrderItem } from "@/lib/ordering/types";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ItemForm from "./ItemForm";
+
+const VALID_IDS = new Set(CATEGORIES.map((c) => c.id));
 
 function itemLabel(item: OrderItem) {
   if (item.category === "paintings") {
@@ -20,29 +22,46 @@ function itemLabel(item: OrderItem) {
 
 export default function ItemsStep() {
   const { draft, setStep, addItem, updateItem, removeItem, setDraft } = useOrder();
+
+  const selectedCategories = useMemo(
+    () => draft.categories.filter((id) => VALID_IDS.has(id as (typeof CATEGORIES)[number]["id"])),
+    [draft.categories]
+  );
+
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(
-    draft.categories[0] || null
+    selectedCategories[0] || null
   );
   const [editing, setEditing] = useState<OrderItem | null>(null);
-  const [adding, setAdding] = useState(() => {
-    const first = draft.categories[0];
-    if (!first) return false;
-    return !draft.items.some((i) => i.category === first);
-  });
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    if (
+      !activeCategory ||
+      !VALID_IDS.has(activeCategory as (typeof CATEGORIES)[number]["id"])
+    ) {
+      setActiveCategory(selectedCategories[0] || null);
+      setAdding(false);
+      setEditing(null);
+    }
+  }, [activeCategory, selectedCategories]);
 
   const categoryItems = useMemo(
     () => draft.items.filter((i) => i.category === activeCategory),
     [draft.items, activeCategory]
   );
 
+  const allItems = useMemo(
+    () => draft.items.filter((i) => VALID_IDS.has(i.category as (typeof CATEGORIES)[number]["id"])),
+    [draft.items]
+  );
+
   function selectCategory(id: CategoryId) {
     setActiveCategory(id);
     setEditing(null);
-    const hasItems = draft.items.some((i) => i.category === id);
-    setAdding(!hasItems);
+    setAdding(false);
   }
 
-  if (!draft.categories.length) {
+  if (!selectedCategories.length) {
     return (
       <div className="text-center">
         <p className="text-muted">Select at least one category first.</p>
@@ -53,26 +72,31 @@ export default function ItemsStep() {
     );
   }
 
+  const activeMeta = CATEGORIES.find((c) => c.id === activeCategory);
+  const showList = activeCategory && activeMeta && !adding && !editing;
+
   return (
     <div>
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-        Enter each item
+        Your items
       </h1>
-      <p className="mt-2 text-center text-muted">
-        Add items one at a time. You can edit or remove anything before continuing.
+      <p className="mx-auto mt-2 max-w-md text-center text-muted">
+        Add each piece separately. You can include as many items as you need before
+        continuing.
       </p>
 
-      {draft.categories.length === 1 ? (
+      {selectedCategories.length === 1 ? (
         <p className="mt-6 text-center text-sm text-muted">
-          Adding items for{" "}
+          Category:{" "}
           <span className="font-medium text-foreground">
-            {CATEGORIES.find((c) => c.id === draft.categories[0])?.name}
+            {CATEGORIES.find((c) => c.id === selectedCategories[0])?.name}
           </span>
         </p>
       ) : (
         <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 border-b border-black/10 pb-3">
-          {draft.categories.map((id) => {
-            const cat = CATEGORIES.find((c) => c.id === id)!;
+          {selectedCategories.map((id) => {
+            const cat = CATEGORIES.find((c) => c.id === id);
+            if (!cat) return null;
             const count = draft.items.filter((i) => i.category === id).length;
             const active = activeCategory === id;
             return (
@@ -94,7 +118,36 @@ export default function ItemsStep() {
         </div>
       )}
 
-      {activeCategory && !adding && !editing && categoryItems.length > 0 && (
+      {showList && categoryItems.length === 0 && (
+        <div className="mt-10 flex flex-col items-center border border-dashed border-black/20 px-6 py-12 text-center">
+          <p className="text-base font-medium text-foreground">No items yet</p>
+          <p className="mt-2 max-w-sm text-sm text-muted">
+            {activeCategory === "paintings"
+              ? "Add your first painting or wall art piece."
+              : activeCategory === "sculptures"
+                ? "Add your first sculpture."
+                : activeCategory === "furniture"
+                  ? "Add your first furniture piece."
+                  : "Add your first décor piece."}{" "}
+            You can come back and add more afterward.
+          </p>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="mt-6 bg-black px-8 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
+          >
+            Add an Item
+          </button>
+          {allItems.length > 0 && (
+            <p className="mt-4 text-xs text-muted">
+              {allItems.length} item{allItems.length === 1 ? "" : "s"} already added in other
+              categories
+            </p>
+          )}
+        </div>
+      )}
+
+      {showList && categoryItems.length > 0 && (
         <div className="mt-8 space-y-4">
           {categoryItems.map((item, idx) => (
             <div
@@ -103,13 +156,14 @@ export default function ItemsStep() {
             >
               <div>
                 <p className="font-medium">
-                  {CATEGORIES.find((c) => c.id === item.category)?.name} {idx + 1} of{" "}
-                  {categoryItems.length}
+                  {activeMeta.name} {idx + 1} of {categoryItems.length}
                 </p>
                 <p className="text-sm text-muted">
-                  {itemLabel(item)} · {item.width || "—"}×{item.height || "—"}{" "}
-                  {item.measureUnit}
+                  {itemLabel(item)} · {item.width || "—"}×{item.height || "—"} in
                   {item.weight != null ? ` · ~${item.weight} lbs` : ""}
+                  {item.declaredValueDollars
+                    ? ` · Declared $${Number(item.declaredValueDollars).toLocaleString()}`
+                    : ""}
                   {"install" in item && item.install ? " · Installation" : ""}
                 </p>
               </div>
@@ -142,19 +196,19 @@ export default function ItemsStep() {
         </div>
       )}
 
-      {activeCategory && (adding || editing) && (
+      {activeCategory && activeMeta && (adding || editing) && (
         <div className="mt-8">
           <ItemForm
             category={activeCategory}
             initial={editing || undefined}
             onCancel={() => {
               setEditing(null);
-              setAdding(categoryItems.length === 0);
+              setAdding(false);
             }}
             onSave={(item) => {
               setDraft((d) => ({
                 ...d,
-                measureUnitDefault: item.measureUnit,
+                measureUnitDefault: "in",
                 weightUnitDefault: "lb",
               }));
               if (editing) updateItem(item.id, item);
@@ -176,7 +230,7 @@ export default function ItemsStep() {
         </button>
         <button
           type="button"
-          disabled={!draft.items.length}
+          disabled={!allItems.length || adding || !!editing}
           onClick={() => setStep(2)}
           className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black disabled:opacity-40"
         >

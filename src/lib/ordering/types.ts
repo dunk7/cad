@@ -23,6 +23,8 @@ export type OrderItemBase = {
   wrappingRequested?: boolean;
   existingDamage?: "yes" | "no" | "unsure";
   damageNotes?: string;
+  /** Customer-declared value for this item in USD */
+  declaredValueDollars?: number;
 };
 
 export type PaintingItem = OrderItemBase & {
@@ -124,7 +126,10 @@ export type DraftOrder = {
   pickup: Partial<LocationDetails>;
   delivery: Partial<LocationDetails>;
   customer: Partial<CustomerInfo>;
+  /** Sum of item declared values (kept in sync for checkout/alerts). */
   declaredValueDollars: number;
+  /** When true, charge declared-value protection on the order total. */
+  declaredValueProtection: boolean;
   schedule?: ScheduleSelection;
   measureUnitDefault: MeasureUnit;
   weightUnitDefault: WeightUnit;

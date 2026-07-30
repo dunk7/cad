@@ -8,7 +8,6 @@ export const aboutIntro = {
   bannerImages: [
     "/images/team/banner-vans.jpg",
     "/images/team/banner-team.jpg",
-    "/images/home/IMG_4120.jpg",
   ],
 };
 

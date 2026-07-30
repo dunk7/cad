@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 export default function ScheduleStep() {
   const { draft, setDraft, setStep, price } = useOrder();
   const [routes, setRoutes] = useState<RouteSlot[]>([]);
-  const [declaredPct, setDeclaredPct] = useState(1.5);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,7 +15,6 @@ export default function ScheduleStep() {
       .then((r) => r.json())
       .then((d) => {
         setRoutes(d.routes || []);
-        setDeclaredPct(d.declaredValuePercent || 1.5);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -29,29 +27,6 @@ export default function ScheduleStep() {
       <p className="mt-2 text-center text-muted">
         Select dates from California Art Delivery’s recurring route schedule.
       </p>
-
-      <div className="mx-auto mt-8 max-w-xl">
-        <label className="mb-1 block text-sm font-medium">
-          Declared value of all items (USD)
-        </label>
-        <input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step="1"
-          className="w-full border border-black/20 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
-          value={draft.declaredValueDollars || ""}
-          onChange={(e) =>
-            setDraft((d) => ({
-              ...d,
-              declaredValueDollars: Number(e.target.value) || 0,
-            }))
-          }
-        />
-        <p className="mt-1 text-xs text-muted">
-          Declared value protection is calculated at {declaredPct}% of the amount you enter.
-        </p>
-      </div>
 
       {price && (
         <p className="mt-6 text-center text-lg font-medium">

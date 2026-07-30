@@ -227,16 +227,27 @@ export function priceItem(item: OrderItem, cfg: PricingConfig): PriceLine[] {
   }
 }
 
+export function totalDeclaredValueDollars(items: OrderItem[]) {
+  return items.reduce(
+    (sum, item) => sum + Math.max(0, Number(item.declaredValueDollars) || 0),
+    0
+  );
+}
+
 export function calculatePrice(
-  draft: Pick<DraftOrder, "items" | "declaredValueDollars">,
+  draft: Pick<DraftOrder, "items" | "declaredValueProtection">,
   cfg: PricingConfig
 ): PriceResult {
   const lines: PriceLine[] = [];
   for (const item of draft.items) {
     lines.push(...priceItem(item, cfg));
   }
-  const declared = Math.max(0, draft.declaredValueDollars || 0);
-  if (declared > 0 && cfg.declaredValuePercent > 0) {
+  const declared = totalDeclaredValueDollars(draft.items);
+  if (
+    draft.declaredValueProtection &&
+    declared > 0 &&
+    cfg.declaredValuePercent > 0
+  ) {
     lines.push({
       code: "declared_value",
       label: `Declared value protection (${cfg.declaredValuePercent}%)`,

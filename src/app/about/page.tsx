@@ -9,18 +9,17 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <section className="grid grid-cols-1 sm:grid-cols-3">
+      <section className="grid grid-cols-1 sm:grid-cols-2">
         {aboutIntro.bannerImages.map((src) => (
           <div key={src} className="relative aspect-[16/10] sm:aspect-[4/3]">
             <Image
               src={src}
               alt=""
               fill
-              className="object-cover opacity-40"
-              sizes="(min-width: 640px) 33vw, 100vw"
+              className="object-cover"
+              sizes="(min-width: 640px) 50vw, 100vw"
               priority
             />
-            <div className="absolute inset-0 bg-white/55" />
           </div>
         ))}
       </section>

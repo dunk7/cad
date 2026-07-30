@@ -26,7 +26,7 @@ function WizardInner() {
           </p>
         )}
 
-        <Progress step={Math.min(step, 6)} />
+        <Progress step={step} />
 
         {price && step > 0 && price.totalCents > 0 && (
           <p className="mt-5 text-center text-sm text-muted">

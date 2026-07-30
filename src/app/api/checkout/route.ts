@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAppConfig } from "@/lib/ordering/config";
-import { calculatePrice } from "@/lib/ordering/pricing";
+import { calculatePrice, totalDeclaredValueDollars } from "@/lib/ordering/pricing";
 import { evaluateAlerts } from "@/lib/ordering/alerts";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import type { DraftOrder } from "@/lib/ordering/types";
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       scheduleJson: JSON.stringify(draft.schedule),
       pricingJson: JSON.stringify(price),
       alertsJson: JSON.stringify(alerts),
-      declaredValueCents: Math.round((draft.declaredValueDollars || 0) * 100),
+      declaredValueCents: Math.round(totalDeclaredValueDollars(draft.items) * 100),
       totalCents: price.totalCents,
       termsAcceptedAt: new Date(),
     },

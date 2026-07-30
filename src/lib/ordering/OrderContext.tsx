@@ -16,6 +16,7 @@ import type {
   PriceResult,
 } from "@/lib/ordering/types";
 import { randomUUID } from "@/lib/ordering/id";
+import { totalDeclaredValueDollars } from "@/lib/ordering/pricing";
 
 const STORAGE_KEY = "cad_order_draft_v2";
 const ALLOWED_CATEGORIES = new Set(["paintings", "sculptures", "furniture", "decor"]);
@@ -27,18 +28,27 @@ const emptyDraft = (): DraftOrder => ({
   delivery: { state: "CA" },
   customer: {},
   declaredValueDollars: 0,
+  declaredValueProtection: false,
   measureUnitDefault: "in",
   weightUnitDefault: "lb",
   termsAccepted: false,
 });
 
-function sanitizeDraft(parsed: Partial<DraftOrder>): DraftOrder {
+function withDeclaredSum(d: DraftOrder): DraftOrder {
   return {
+    ...d,
+    declaredValueDollars: totalDeclaredValueDollars(d.items),
+  };
+}
+
+function sanitizeDraft(parsed: Partial<DraftOrder>): DraftOrder {
+  return withDeclaredSum({
     ...emptyDraft(),
     ...parsed,
     categories: (parsed.categories || []).filter((c) => ALLOWED_CATEGORIES.has(c)),
     items: (parsed.items || []).filter((i) => ALLOWED_CATEGORIES.has(i.category)),
-  };
+    declaredValueProtection: Boolean(parsed.declaredValueProtection),
+  });
 }
 
 type Ctx = {
@@ -80,7 +90,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   }, [draft, hydrated]);
 
   const setDraft = useCallback((updater: (d: DraftOrder) => DraftOrder) => {
-    setDraftState((d) => updater(d));
+    setDraftState((d) => withDeclaredSum(updater(d)));
   }, []);
 
   const refreshPrice = useCallback(async () => {
@@ -96,7 +106,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     void refreshPrice();
-  }, [draft.items, draft.declaredValueDollars, hydrated, refreshPrice]);
+  }, [draft.items, draft.declaredValueProtection, hydrated, refreshPrice]);
 
   const value = useMemo<Ctx>(
     () => ({
@@ -115,7 +125,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         }));
       },
       setDraft,
-      addItem: (item) => setDraft((d) => ({ ...d, items: [...d.items, item] })),
+      addItem: (item) =>
+        setDraft((d) => ({ ...d, items: [...d.items, item] })),
       updateItem: (id, item) =>
         setDraft((d) => ({
           ...d,

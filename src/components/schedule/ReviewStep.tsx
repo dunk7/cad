@@ -2,12 +2,31 @@
 
 import { formatCents } from "@/lib/money";
 import { useOrder } from "@/lib/ordering/OrderContext";
-import { useState } from "react";
+import { totalDeclaredValueDollars } from "@/lib/ordering/pricing";
+import { useEffect, useMemo, useState } from "react";
 
 export default function ReviewStep() {
   const { draft, setDraft, setStep, price } = useOrder();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [declaredPct, setDeclaredPct] = useState(1.5);
+
+  const declaredTotal = useMemo(
+    () => totalDeclaredValueDollars(draft.items),
+    [draft.items]
+  );
+  const protectionCents = Math.round(declaredTotal * (declaredPct / 100) * 100);
+
+  useEffect(() => {
+    void fetch("/api/pricing")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.declaredValuePercent != null) setDeclaredPct(d.declaredValuePercent);
+      })
+      .catch(() => {
+        /* keep default */
+      });
+  }, []);
 
   async function pay() {
     setError("");
@@ -42,14 +61,25 @@ export default function ReviewStep() {
           <h2 className="font-medium">Items ({draft.items.length})</h2>
           <ul className="mt-3 space-y-2 text-sm text-muted">
             {draft.items.map((item) => (
-              <li key={item.id}>
-                {item.category} · qty {item.quantity}
-                {item.width != null && item.height != null
-                  ? ` · ${item.width}×${item.height} ${item.measureUnit}`
-                  : ""}
+              <li key={item.id} className="flex justify-between gap-4">
+                <span>
+                  {item.category} · qty {item.quantity}
+                  {item.width != null && item.height != null
+                    ? ` · ${item.width}×${item.height} in`
+                    : ""}
+                </span>
+                <span className="shrink-0 tabular-nums">
+                  Declared ${Math.max(0, Number(item.declaredValueDollars) || 0).toLocaleString()}
+                </span>
               </li>
             ))}
           </ul>
+          {declaredTotal > 0 && (
+            <p className="mt-3 flex justify-between border-t border-black/10 pt-3 text-sm font-medium text-foreground">
+              <span>Total declared value</span>
+              <span className="tabular-nums">${declaredTotal.toLocaleString()}</span>
+            </p>
+          )}
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2">
@@ -83,6 +113,35 @@ export default function ReviewStep() {
             Pickup {draft.schedule?.pickupDate} → Delivery {draft.schedule?.deliveryDate}
           </p>
         </section>
+
+        {declaredTotal > 0 && (
+          <section className="border border-black/10 p-4">
+            <h2 className="font-medium">Declared value protection</h2>
+            <p className="mt-2 text-sm text-muted">
+              Optional coverage based on the declared values you entered for each item (
+              {declaredPct}% of ${declaredTotal.toLocaleString()}).
+            </p>
+            <label className="mt-4 flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={draft.declaredValueProtection}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    declaredValueProtection: e.target.checked,
+                  }))
+                }
+              />
+              <span>
+                Add declared value protection for{" "}
+                <span className="font-medium text-foreground">
+                  {formatCents(protectionCents)}
+                </span>
+              </span>
+            </label>
+          </section>
+        )}
 
         <section className="border border-black/10 p-4">
           <h2 className="font-medium">Price</h2>
