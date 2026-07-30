@@ -1,8 +1,10 @@
 export const hero = {
   headline:
     "White glove delivery & global shipping of Fine Art, Luxury Furniture & Décor",
-  ctaLabel: "Schedule Delivery",
-  ctaHref: "/contact",
+  ctaLabel: "Schedule Now",
+  ctaHref: "/schedule",
+  ctaSupport:
+    "Schedule your service online. Have your item details, pickup and delivery information, and contact information ready. Payment is required to confirm your order.",
   image: "/images/home/IMG_4133.jpg",
 };
 
@@ -198,6 +200,6 @@ export const finalCta = {
   heading:
     "Contact us today for a free estimate. We look forward to serving you.",
   image: "/images/home/IMG_4668.jpg",
-  ctaLabel: "Contact Us",
-  ctaHref: "/contact",
+  ctaLabel: "Schedule Now",
+  ctaHref: "/schedule",
 };

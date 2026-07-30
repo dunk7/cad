@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 export default function Footer() {
+  const pathname = usePathname();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "ok">("idle");
 
@@ -12,6 +14,8 @@ export default function Footer() {
     setStatus("ok");
     setEmail("");
   }
+
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <footer className="bg-band text-white">

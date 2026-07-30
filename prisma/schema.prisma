@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id                String   @id @default(cuid())
+  orderNumber       String   @unique
+  status            String   @default("pending_payment")
+  customerName      String
+  customerEmail     String
+  customerPhone     String?
+  pickupJson        String
+  deliveryJson      String
+  itemsJson         String
+  scheduleJson      String
+  pricingJson       String
+  alertsJson        String   @default("[]")
+  declaredValueCents Int     @default(0)
+  totalCents        Int
+  currency          String   @default("usd")
+  termsAcceptedAt   DateTime?
+  stripeSessionId   String?  @unique
+  stripePaymentIntentId String?
+  paymentMethod     String?
+  internalNotes     String   @default("")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model AppConfig {
+  id        String   @id @default("default")
+  pricingJson String
+  routesJson  String
+  updatedAt DateTime @updatedAt
+}

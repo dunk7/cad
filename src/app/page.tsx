@@ -33,6 +33,7 @@ export default function HomePage() {
           >
             {hero.ctaLabel}
           </Link>
+          <p className="mt-4 max-w-xl text-sm text-white/75">{hero.ctaSupport}</p>
         </div>
       </section>
 

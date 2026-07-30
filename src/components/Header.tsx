@@ -7,6 +7,7 @@ import { useState } from "react";
 
 const nav = [
   { href: "/", label: "Home" },
+  { href: "/schedule", label: "Schedule Now" },
   { href: "/contact", label: "Contact" },
   { href: "/about", label: "About Us" },
 ];
@@ -14,6 +15,8 @@ const nav = [
 export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <header className="sticky top-0 z-50 bg-header text-white">
