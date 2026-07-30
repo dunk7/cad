@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const body = (await req.json()) as { draft: DraftOrder };
   const { pricing } = await getAppConfig();
   const result = calculatePrice(
-    body.draft || { items: [], declaredValueProtection: false },
+    body.draft || { items: [], declaredValueProtection: true },
     pricing
   );
   return NextResponse.json({ pricing: result, config: pricing });

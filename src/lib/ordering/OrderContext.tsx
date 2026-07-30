@@ -28,7 +28,7 @@ const emptyDraft = (): DraftOrder => ({
   delivery: { state: "CA" },
   customer: {},
   declaredValueDollars: 0,
-  declaredValueProtection: false,
+  declaredValueProtection: true,
   measureUnitDefault: "in",
   weightUnitDefault: "lb",
   termsAccepted: false,
@@ -47,7 +47,10 @@ function sanitizeDraft(parsed: Partial<DraftOrder>): DraftOrder {
     ...parsed,
     categories: (parsed.categories || []).filter((c) => ALLOWED_CATEGORIES.has(c)),
     items: (parsed.items || []).filter((i) => ALLOWED_CATEGORIES.has(i.category)),
-    declaredValueProtection: Boolean(parsed.declaredValueProtection),
+    declaredValueProtection:
+      typeof parsed.declaredValueProtection === "boolean"
+        ? parsed.declaredValueProtection
+        : true,
   });
 }
 

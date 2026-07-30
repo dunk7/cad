@@ -18,14 +18,14 @@ const FRAME_CHARS = [
 ];
 
 const WRAP_OPTIONS = [
+  "Unwrapped",
+  "Hanging on a wall",
+  "Wrapped in bubble wrap",
   "Wrapped in paper",
   "Wrapped in plastic",
-  "Wrapped in bubble wrap",
   "Blanket wrapped",
   "In a cardboard box",
   "In a wooden crate",
-  "Hanging on a wall",
-  "Unwrapped",
   "Not sure",
   "Other",
 ];
@@ -51,6 +51,22 @@ type Props = {
   onSave: (item: OrderItem) => void;
   onCancel: () => void;
 };
+
+function formatDeclaredValue(value: unknown) {
+  if (value === "" || value === undefined || value === null) return "";
+  const n =
+    typeof value === "number"
+      ? value
+      : Number(String(value).replace(/,/g, ""));
+  if (!Number.isFinite(n)) return "";
+  return Math.max(0, Math.round(n)).toLocaleString("en-US");
+}
+
+function parseDeclaredValue(raw: string): number | "" {
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  return Number(digits);
+}
 
 export default function ItemForm({ category, initial, onSave, onCancel }: Props) {
   const { newItemId } = useOrder();
@@ -104,7 +120,10 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       quantity: category === "paintings" ? 1 : Number(form.quantity) || 1,
       height: form.height === "" ? undefined : Number(form.height),
       width: form.width === "" ? undefined : Number(form.width),
-      depth: form.depth === "" ? undefined : Number(form.depth),
+      depth:
+        category === "paintings" || form.depth === ""
+          ? undefined
+          : Number(form.depth),
       measureUnit: "in" as const,
       weight: form.weight === "" ? undefined : Number(form.weight),
       weightUnit: "lb" as WeightUnit,
@@ -115,7 +134,12 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       declaredValueDollars:
         form.declaredValueDollars === ""
           ? 0
-          : Math.max(0, Number(form.declaredValueDollars) || 0),
+          : Math.max(
+              0,
+              typeof form.declaredValueDollars === "number"
+                ? form.declaredValueDollars
+                : Number(String(form.declaredValueDollars).replace(/,/g, "")) || 0
+            ),
     };
 
     let item: OrderItem;
@@ -342,8 +366,17 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {(["height", "width", "depth"] as const).map((dim) => (
+      <div
+        className={`grid gap-4 ${
+          category === "paintings" ? "sm:grid-cols-2" : "sm:grid-cols-3"
+        }`}
+      >
+        {(
+          (category === "paintings"
+            ? (["height", "width"] as const)
+            : (["height", "width", "depth"] as const)
+          )
+        ).map((dim) => (
           <div key={dim}>
             <label className={label}>
               {dim[0].toUpperCase() + dim.slice(1)} (inches)
@@ -374,25 +407,26 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       </div>
 
       <div>
-        <label className={label}>Declared value (USD)</label>
-        <input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step="1"
-          className={field}
-          value={
-            form.declaredValueDollars === undefined || form.declaredValueDollars === ""
-              ? ""
-              : String(form.declaredValueDollars)
-          }
-          onChange={(e) => set("declaredValueDollars", e.target.value)}
-          placeholder="0"
-        />
-        <p className="mt-1 text-xs text-muted">
-          Enter this item’s declared value. You can choose declared value protection when you
-          review your order.
-        </p>
+        <label className={label}>Declared value</label>
+        <div className="flex overflow-hidden border border-black/20 bg-white focus-within:border-black">
+          <span
+            className="flex select-none items-center border-r border-black/10 bg-[#f3f3f3] px-3 text-sm font-medium text-muted"
+            aria-hidden="true"
+          >
+            $
+          </span>
+          <input
+            type="text"
+            inputMode="numeric"
+            className="w-full bg-transparent px-3 py-2.5 text-sm tabular-nums outline-none"
+            value={formatDeclaredValue(form.declaredValueDollars)}
+            onChange={(e) =>
+              set("declaredValueDollars", parseDeclaredValue(e.target.value))
+            }
+            placeholder="0"
+            aria-label="Declared value in US dollars"
+          />
+        </div>
       </div>
 
       {(category === "furniture" || category === "decor") && (
@@ -568,7 +602,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
           <label className={label}>How is the piece currently wrapped or prepared?</label>
           <select
             className={field}
-            value={String(form.currentWrapping || "Not sure")}
+            value={String(form.currentWrapping || "Unwrapped")}
             onChange={(e) => set("currentWrapping", e.target.value)}
           >
             {WRAP_OPTIONS.map((o) => (

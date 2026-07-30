@@ -185,8 +185,7 @@ export default function ReviewStep() {
         <div className="rounded-lg border border-black/10 bg-[#f7f7f7] p-4">
           <p className="font-medium">Pay by bank (ACH)</p>
           <p className="mt-1 text-sm text-muted">
-            Bank transfer is our preferred payment method. Card is available as a secondary
-            option at checkout.
+            Bank transfer is our preferred payment method.
           </p>
         </div>
 

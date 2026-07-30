@@ -54,7 +54,7 @@ export default function LocationStep({ kind }: Props) {
         {title}
       </h1>
       <p className="mt-2 text-center text-muted">
-        Include parking and how we will access the item after arriving.
+        Tell us where to go and who to contact on site.
       </p>
 
       <div className="mx-auto mt-8 max-w-xl space-y-4">
@@ -177,21 +177,25 @@ export default function LocationStep({ kind }: Props) {
           </div>
         </div>
         <div>
-          <label className={label}>Parking and vehicle-access instructions</label>
+          <label className={label}>
+            Parking and access instructions{" "}
+            <span className="font-normal text-muted">(optional)</span>
+          </label>
           <textarea
             className={field}
             rows={3}
-            value={data.parkingInstructions || ""}
-            onChange={(e) => setLoc({ parkingInstructions: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className={label}>How will we access the item after arriving?</label>
-          <textarea
-            className={field}
-            rows={3}
-            value={data.accessInstructions || ""}
-            onChange={(e) => setLoc({ accessInstructions: e.target.value })}
+            value={
+              data.parkingInstructions ||
+              data.accessInstructions ||
+              ""
+            }
+            onChange={(e) =>
+              setLoc({
+                parkingInstructions: e.target.value,
+                accessInstructions: "",
+              })
+            }
+            placeholder="Parking, gate codes, building entry, where the item is, etc."
           />
         </div>
       </div>
