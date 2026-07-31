@@ -1,7 +1,7 @@
 export const CATEGORIES = [
   {
     id: "paintings" as const,
-    name: "Paintings & Wall Art",
+    name: "Paintings or Wall Art",
     image: "/images/home/IMG_4705.jpg",
   },
   {
@@ -75,10 +75,8 @@ export const SIZE_CLASSES = [
 ];
 
 export const WIZARD_STEPS = [
-  "Categories",
   "Items",
   "Pickup",
   "Delivery",
-  "Schedule",
   "Payment",
 ] as const;

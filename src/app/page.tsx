@@ -24,16 +24,15 @@ export default function HomePage() {
         />
         <div className="absolute inset-0 bg-black/45" />
         <div className="relative mx-auto flex min-h-[70vh] max-w-4xl flex-col items-center justify-center px-4 py-24 text-center sm:min-h-[78vh] sm:px-6">
-          <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl">
+          <h1 className="translate-y-[25px] text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl">
             {hero.headline}
           </h1>
           <Link
             href={hero.ctaHref}
-            className="mt-8 inline-flex border border-white px-8 py-3 text-sm font-medium tracking-wide transition hover:bg-white hover:text-black"
+            className="mt-10 inline-flex translate-y-[75px] border-2 border-white bg-white px-12 py-5 text-xl font-semibold tracking-wide text-black transition hover:bg-transparent hover:text-white sm:mt-12 sm:px-16 sm:py-6 sm:text-2xl"
           >
             {hero.ctaLabel}
           </Link>
-          <p className="mt-4 max-w-xl text-sm text-white/75">{hero.ctaSupport}</p>
         </div>
       </section>
 

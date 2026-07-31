@@ -92,6 +92,13 @@ export default function ReviewStep() {
               <br />
               {draft.pickup.city}, {draft.pickup.state} {draft.pickup.zip}
             </p>
+            {draft.schedule?.pickupDate && (
+              <p className="mt-3 border-t border-black/10 pt-3 text-foreground">
+                {draft.schedule.label || "Pickup"}
+                <br />
+                <span className="text-muted">{draft.schedule.pickupDate}</span>
+              </p>
+            )}
           </div>
           <div className="border border-black/10 p-4 text-sm">
             <h2 className="font-medium">Delivery</h2>
@@ -103,15 +110,6 @@ export default function ReviewStep() {
               {draft.delivery.city}, {draft.delivery.state} {draft.delivery.zip}
             </p>
           </div>
-        </section>
-
-        <section className="border border-black/10 p-4 text-sm">
-          <h2 className="font-medium">Schedule</h2>
-          <p className="mt-2 text-muted">
-            {draft.schedule?.label}
-            <br />
-            Pickup {draft.schedule?.pickupDate} → Delivery {draft.schedule?.deliveryDate}
-          </p>
         </section>
 
         {declaredTotal > 0 && (
@@ -195,7 +193,7 @@ export default function ReviewStep() {
       <div className="mt-10 flex flex-wrap justify-between gap-3">
         <button
           type="button"
-          onClick={() => setStep(4)}
+          onClick={() => setStep(2)}
           className="border border-black/20 px-6 py-3 text-sm hover:border-black"
         >
           Back

@@ -2,35 +2,29 @@
 
 import { useOrder } from "@/lib/ordering/OrderContext";
 import type { LocationDetails } from "@/lib/ordering/types";
+import { useEffect } from "react";
 
 const field =
   "w-full border border-black/20 bg-white px-3 py-2.5 text-sm outline-none focus:border-black";
 const label = "mb-1 block text-sm font-medium";
 
-type Props = {
-  kind: "pickup" | "delivery";
-};
-
-export default function LocationStep({ kind }: Props) {
+export default function LocationStep() {
   const { draft, setDraft, setStep } = useOrder();
-  const data = (kind === "pickup" ? draft.pickup : draft.delivery) as Partial<LocationDetails>;
-  const title = kind === "pickup" ? "Pickup details" : "Delivery details";
-  const back = kind === "pickup" ? 1 : 2;
-  const next = kind === "pickup" ? 3 : 4;
+  const data = draft.delivery;
+
+  useEffect(() => {
+    if (!data.state?.trim()) {
+      setDraft((d) => ({
+        ...d,
+        delivery: { ...d.delivery, state: "CA" },
+      }));
+    }
+  }, [data.state, setDraft]);
 
   function setLoc(patch: Partial<LocationDetails>) {
     setDraft((d) => ({
       ...d,
-      [kind]: { ...d[kind], ...patch },
-      customer:
-        kind === "pickup"
-          ? {
-              ...d.customer,
-              name: patch.name ?? d.customer.name ?? d.pickup.name,
-              email: patch.email ?? d.customer.email,
-              phone: patch.phone ?? d.customer.phone ?? d.pickup.phone,
-            }
-          : d.customer,
+      delivery: { ...d.delivery, ...patch },
     }));
   }
 
@@ -39,19 +33,13 @@ export default function LocationStep({ kind }: Props) {
       alert("Please complete name, phone, address, city, and ZIP.");
       return;
     }
-    if (kind === "pickup" && !draft.customer.email) {
-      // ask email on pickup
-      const email = window.prompt("Email for confirmation and receipt:");
-      if (!email) return;
-      setDraft((d) => ({ ...d, customer: { ...d.customer, email } }));
-    }
-    setStep(next);
+    setStep(3);
   }
 
   return (
     <div>
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-        {title}
+        Delivery details
       </h1>
       <p className="mt-2 text-center text-muted">
         Tell us where to go and who to contact on site.
@@ -66,33 +54,15 @@ export default function LocationStep({ kind }: Props) {
             onChange={(e) => setLoc({ name: e.target.value })}
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className={label}>Phone</label>
-            <input
-              type="tel"
-              inputMode="tel"
-              className={field}
-              value={data.phone || ""}
-              onChange={(e) => setLoc({ phone: e.target.value })}
-            />
-          </div>
-          {kind === "pickup" && (
-            <div>
-              <label className={label}>Email</label>
-              <input
-                type="email"
-                className={field}
-                value={draft.customer.email || ""}
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    customer: { ...d.customer, email: e.target.value },
-                  }))
-                }
-              />
-            </div>
-          )}
+        <div>
+          <label className={label}>Phone</label>
+          <input
+            type="tel"
+            inputMode="tel"
+            className={field}
+            value={data.phone || ""}
+            onChange={(e) => setLoc({ phone: e.target.value })}
+          />
         </div>
         <div>
           <label className={label}>Street address</label>
@@ -101,14 +71,6 @@ export default function LocationStep({ kind }: Props) {
             value={data.address1 || ""}
             onChange={(e) => setLoc({ address1: e.target.value })}
             autoComplete="street-address"
-          />
-        </div>
-        <div>
-          <label className={label}>Address line 2</label>
-          <input
-            className={field}
-            value={data.address2 || ""}
-            onChange={(e) => setLoc({ address2: e.target.value })}
           />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -125,7 +87,8 @@ export default function LocationStep({ kind }: Props) {
             <input
               className={field}
               value={data.state || "CA"}
-              onChange={(e) => setLoc({ state: e.target.value })}
+              onChange={(e) => setLoc({ state: e.target.value || "CA" })}
+              placeholder="CA"
             />
           </div>
           <div>
@@ -184,11 +147,7 @@ export default function LocationStep({ kind }: Props) {
           <textarea
             className={field}
             rows={3}
-            value={
-              data.parkingInstructions ||
-              data.accessInstructions ||
-              ""
-            }
+            value={data.parkingInstructions || data.accessInstructions || ""}
             onChange={(e) =>
               setLoc({
                 parkingInstructions: e.target.value,
@@ -203,7 +162,7 @@ export default function LocationStep({ kind }: Props) {
       <div className="mt-10 flex justify-between gap-3">
         <button
           type="button"
-          onClick={() => setStep(back)}
+          onClick={() => setStep(1)}
           className="border border-black/20 px-6 py-3 text-sm hover:border-black"
         >
           Back

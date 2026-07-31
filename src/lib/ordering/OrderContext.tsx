@@ -41,10 +41,18 @@ function withDeclaredSum(d: DraftOrder): DraftOrder {
   };
 }
 
+function withDefaultState(
+  loc: Partial<DraftOrder["pickup"]> | undefined
+): Partial<DraftOrder["pickup"]> {
+  return { ...loc, state: loc?.state?.trim() || "CA" };
+}
+
 function sanitizeDraft(parsed: Partial<DraftOrder>): DraftOrder {
   return withDeclaredSum({
     ...emptyDraft(),
     ...parsed,
+    pickup: withDefaultState(parsed.pickup),
+    delivery: withDefaultState(parsed.delivery),
     categories: (parsed.categories || []).filter((c) => ALLOWED_CATEGORIES.has(c)),
     items: (parsed.items || []).filter((i) => ALLOWED_CATEGORIES.has(i.category)),
     declaredValueProtection:

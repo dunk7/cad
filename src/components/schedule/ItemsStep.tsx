@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { CATEGORIES } from "@/lib/ordering/catalog";
 import { useOrder } from "@/lib/ordering/OrderContext";
 import type { CategoryId, OrderItem } from "@/lib/ordering/types";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import ItemForm from "./ItemForm";
 
 const VALID_IDS = new Set(CATEGORIES.map((c) => c.id));
@@ -13,6 +14,10 @@ function itemLabel(item: OrderItem) {
     if (item.pieceType === "Other wall art" && item.pieceDescription) {
       return item.pieceDescription;
     }
+    if (!item.pieceType || item.pieceType === "Painting or framed artwork") {
+      return "Painting";
+    }
+    if (item.pieceType === "Other wall art") return "Wall art";
     return item.pieceType;
   }
   if (item.category === "sculptures") return item.description;
@@ -20,175 +25,129 @@ function itemLabel(item: OrderItem) {
   return item.description;
 }
 
+type Mode = "list" | "pickCategory" | "form";
+
 export default function ItemsStep() {
   const { draft, setStep, addItem, updateItem, removeItem, setDraft } = useOrder();
-
-  const selectedCategories = useMemo(
-    () => draft.categories.filter((id) => VALID_IDS.has(id as (typeof CATEGORIES)[number]["id"])),
-    [draft.categories]
-  );
-
-  const [activeCategory, setActiveCategory] = useState<CategoryId | null>(
-    selectedCategories[0] || null
-  );
+  const [mode, setMode] = useState<Mode>("list");
+  const [formCategory, setFormCategory] = useState<CategoryId | null>(null);
   const [editing, setEditing] = useState<OrderItem | null>(null);
-  const [adding, setAdding] = useState(false);
-
-  useEffect(() => {
-    if (
-      !activeCategory ||
-      !VALID_IDS.has(activeCategory as (typeof CATEGORIES)[number]["id"])
-    ) {
-      setActiveCategory(selectedCategories[0] || null);
-      setAdding(false);
-      setEditing(null);
-    }
-  }, [activeCategory, selectedCategories]);
-
-  const categoryItems = useMemo(
-    () => draft.items.filter((i) => i.category === activeCategory),
-    [draft.items, activeCategory]
-  );
 
   const allItems = useMemo(
-    () => draft.items.filter((i) => VALID_IDS.has(i.category as (typeof CATEGORIES)[number]["id"])),
+    () => draft.items.filter((i) => VALID_IDS.has(i.category as CategoryId)),
     [draft.items]
   );
 
-  function selectCategory(id: CategoryId) {
-    setActiveCategory(id);
+  function startAdd() {
     setEditing(null);
-    setAdding(false);
+    setFormCategory(null);
+    setMode("pickCategory");
   }
 
-  if (!selectedCategories.length) {
-    return (
-      <div className="text-center">
-        <p className="text-muted">Select at least one category first.</p>
-        <button type="button" className="mt-4 underline" onClick={() => setStep(0)}>
-          Back
-        </button>
-      </div>
-    );
+  function pickCategory(id: CategoryId) {
+    setFormCategory(id);
+    setEditing(null);
+    setDraft((d) => ({
+      ...d,
+      categories: d.categories.includes(id) ? d.categories : [...d.categories, id],
+    }));
+    setMode("form");
   }
 
-  const activeMeta = CATEGORIES.find((c) => c.id === activeCategory);
-  const showList = activeCategory && activeMeta && !adding && !editing;
+  function startEdit(item: OrderItem) {
+    setEditing(item);
+    setFormCategory(item.category);
+    setMode("form");
+  }
+
+  function cancelForm() {
+    setEditing(null);
+    setFormCategory(null);
+    setMode("list");
+  }
 
   return (
     <div>
-      <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-        Your items
-      </h1>
-      <p className="mx-auto mt-2 max-w-md text-center text-muted">
-        Add each piece separately. You can include as many items as you need before
-        continuing.
-      </p>
-
-      {selectedCategories.length === 1 ? (
-        <p className="mt-6 text-center text-sm text-muted">
-          Category:{" "}
-          <span className="font-medium text-foreground">
-            {CATEGORIES.find((c) => c.id === selectedCategories[0])?.name}
-          </span>
-        </p>
-      ) : (
-        <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 border-b border-black/10 pb-3">
-          {selectedCategories.map((id) => {
-            const cat = CATEGORIES.find((c) => c.id === id);
-            if (!cat) return null;
-            const count = draft.items.filter((i) => i.category === id).length;
-            const active = activeCategory === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => selectCategory(id)}
-                className={`border-0 bg-transparent px-0 pb-2 text-sm ${
-                  active
-                    ? "border-b-2 border-black font-medium text-foreground"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                {cat.name}
-                {count ? ` (${count})` : ""}
-              </button>
-            );
-          })}
-        </div>
+      {mode === "list" && (
+        <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+          Your items
+        </h1>
       )}
 
-      {showList && categoryItems.length === 0 && (
+      {mode === "pickCategory" && (
+        <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+          Add an item
+        </h1>
+      )}
+
+      {mode === "form" && formCategory && (
+        <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+          {editing ? "Edit item" : "Item details"}
+        </h1>
+      )}
+
+      {mode === "list" && allItems.length === 0 && (
         <div className="mt-10 flex flex-col items-center border border-dashed border-black/20 px-6 py-12 text-center">
           <p className="text-base font-medium text-foreground">No items yet</p>
           <p className="mt-2 max-w-sm text-sm text-muted">
-            {activeCategory === "paintings"
-              ? "Add your first painting or wall art piece."
-              : activeCategory === "sculptures"
-                ? "Add your first sculpture."
-                : activeCategory === "furniture"
-                  ? "Add your first furniture piece."
-                  : "Add your first décor piece."}{" "}
-            You can come back and add more afterward.
+            Add your first piece. You can come back and add more afterward.
           </p>
           <button
             type="button"
-            onClick={() => setAdding(true)}
+            onClick={startAdd}
             className="mt-6 bg-black px-8 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
           >
             Add an Item
           </button>
-          {allItems.length > 0 && (
-            <p className="mt-4 text-xs text-muted">
-              {allItems.length} item{allItems.length === 1 ? "" : "s"} already added in other
-              categories
-            </p>
-          )}
         </div>
       )}
 
-      {showList && categoryItems.length > 0 && (
+      {mode === "list" && allItems.length > 0 && (
         <div className="mt-8 space-y-4">
-          {categoryItems.map((item, idx) => (
-            <div
-              key={item.id}
-              className="flex flex-col gap-3 border border-black/10 p-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p className="font-medium">
-                  {activeMeta.name} {idx + 1} of {categoryItems.length}
-                </p>
-                <p className="text-sm text-muted">
-                  {itemLabel(item)} · {item.width || "—"}×{item.height || "—"} in
-                  {item.weight != null ? ` · ~${item.weight} lbs` : ""}
-                  {item.declaredValueDollars
-                    ? ` · Declared $${Number(item.declaredValueDollars).toLocaleString()}`
-                    : ""}
-                  {"install" in item && item.install ? " · Installation" : ""}
-                </p>
+          {allItems.map((item, idx) => {
+            const catName = CATEGORIES.find((c) => c.id === item.category)?.name || item.category;
+            return (
+              <div
+                key={item.id}
+                className="flex flex-col gap-3 border border-black/10 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p className="font-medium">
+                    Item {idx + 1} of {allItems.length}
+                    <span className="font-normal text-muted"> · {catName}</span>
+                  </p>
+                  <p className="text-sm text-muted">
+                    {itemLabel(item)} · {item.width || "—"}×{item.height || "—"} in
+                    {item.weight != null ? ` · ~${item.weight} lbs` : ""}
+                    {item.declaredValueDollars
+                      ? ` · Declared $${Number(item.declaredValueDollars).toLocaleString()}`
+                      : ""}
+                    {"install" in item && item.install ? " · Installation" : ""}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="border border-black/20 px-3 py-1.5 text-sm hover:border-black"
+                    onClick={() => startEdit(item)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="border border-red-600 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+                    onClick={() => removeItem(item.id)}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="border border-black/20 px-3 py-1.5 text-sm hover:border-black"
-                  onClick={() => setEditing(item)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="border border-black/20 px-3 py-1.5 text-sm text-red-700 hover:border-red-700"
-                  onClick={() => removeItem(item.id)}
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           <button
             type="button"
-            onClick={() => setAdding(true)}
+            onClick={startAdd}
             className="w-full border border-dashed border-black/30 py-4 text-sm font-medium hover:border-black"
           >
             Add Another Item
@@ -196,47 +155,98 @@ export default function ItemsStep() {
         </div>
       )}
 
-      {activeCategory && activeMeta && (adding || editing) && (
+      {mode === "pickCategory" && (
+        <div className="mx-auto mt-8 max-w-3xl">
+          <p className="text-center text-sm text-muted">
+            What type of item are you adding?
+          </p>
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:gap-4">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => pickCategory(cat.id)}
+                className="group relative aspect-[4/3] overflow-hidden text-left outline-none transition duration-300 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.28)]"
+              >
+                <Image
+                  src={cat.image}
+                  alt=""
+                  fill
+                  className={`object-cover transition duration-500 ease-out group-hover:scale-[1.04] ${
+                    cat.id === "paintings" ? "object-center" : ""
+                  }`}
+                  sizes="(min-width: 640px) 40vw, 50vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/5 transition duration-300 group-hover:from-black/80" />
+                <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-5">
+                  <span className="block text-[12px] font-medium leading-snug tracking-tight text-white sm:text-lg">
+                    {cat.name}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="mt-8 flex justify-center">
+            <button
+              type="button"
+              onClick={cancelForm}
+              className="border border-black/20 px-6 py-2.5 text-sm hover:border-black"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mode === "form" && formCategory && (
         <div className="mt-8">
+          {formCategory !== "paintings" && (
+            <p className="mb-4 text-center text-sm text-muted">
+              {CATEGORIES.find((c) => c.id === formCategory)?.name}
+            </p>
+          )}
           <ItemForm
-            category={activeCategory}
+            key={editing?.id || `new-${formCategory}`}
+            category={formCategory}
             initial={editing || undefined}
-            onCancel={() => {
-              setEditing(null);
-              setAdding(false);
-            }}
+            onCancel={cancelForm}
             onSave={(item) => {
               setDraft((d) => ({
                 ...d,
                 measureUnitDefault: "in",
                 weightUnitDefault: "lb",
+                categories: d.categories.includes(item.category)
+                  ? d.categories
+                  : [...d.categories, item.category],
               }));
               if (editing) updateItem(item.id, item);
               else addItem(item);
-              setAdding(false);
               setEditing(null);
+              setFormCategory(null);
+              setMode("list");
             }}
           />
         </div>
       )}
 
-      <div className="mt-10 flex justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setStep(0)}
-          className="border border-black/20 px-6 py-3 text-sm hover:border-black"
-        >
-          Back
-        </button>
-        <button
-          type="button"
-          disabled={!allItems.length || adding || !!editing}
-          onClick={() => setStep(2)}
-          className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black disabled:opacity-40"
-        >
-          Next
-        </button>
-      </div>
+      {mode === "list" && (
+        <div className="mt-10 flex justify-between gap-3">
+          <a
+            href="/"
+            className="inline-flex items-center border border-black/20 px-6 py-3 text-sm hover:border-black"
+          >
+            Back
+          </a>
+          <button
+            type="button"
+            disabled={!allItems.length}
+            onClick={() => setStep(1)}
+            className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -165,10 +165,4 @@ export const defaultRouteSlots: RouteSlot[] = [
     deliveryDate: "2026-08-15",
     label: "Bay Area → LA",
   },
-  {
-    id: "r5",
-    pickupDate: "2026-08-18",
-    deliveryDate: "2026-08-20",
-    label: "LA → San Diego / Desert",
-  },
 ];

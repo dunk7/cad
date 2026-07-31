@@ -24,9 +24,6 @@ export async function POST(req: NextRequest) {
   if (!draft.customer?.name || !draft.customer?.email) {
     return NextResponse.json({ error: "Customer contact required" }, { status: 400 });
   }
-  if (!draft.schedule?.pickupDate || !draft.schedule?.deliveryDate) {
-    return NextResponse.json({ error: "Schedule required" }, { status: 400 });
-  }
   if (!draft.termsAccepted) {
     return NextResponse.json({ error: "Please accept the terms" }, { status: 400 });
   }
