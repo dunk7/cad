@@ -204,15 +204,18 @@ function PaintingAspectPreview({
 
         {/* Width dimension */}
         <div
-          className="flex w-full items-center gap-2"
+          className="flex flex-col items-center gap-1.5 self-stretch"
           style={{ width: boxW }}
           aria-hidden={width <= 0}
         >
-          <span className="h-px flex-1 bg-black/25" />
-          <span className="shrink-0 text-[11px] font-medium tabular-nums tracking-wide text-muted">
+          <div className="flex w-full items-center">
+            <span className="h-2.5 w-px bg-black/30" />
+            <span className="h-px flex-1 bg-black/25" />
+            <span className="h-2.5 w-px bg-black/30" />
+          </div>
+          <span className="select-none text-[11px] font-medium tabular-nums tracking-wide text-muted">
             {labelW}
           </span>
-          <span className="h-px flex-1 bg-black/25" />
         </div>
       </div>
     </div>

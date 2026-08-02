@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { CATEGORIES } from "@/lib/ordering/catalog";
 import { useOrder } from "@/lib/ordering/OrderContext";
 import type { CategoryId, OrderItem } from "@/lib/ordering/types";
@@ -231,12 +232,12 @@ export default function ItemsStep() {
 
       {mode === "list" && (
         <div className="mt-10 flex justify-between gap-3">
-          <a
+          <Link
             href="/"
             className="inline-flex items-center border border-black/20 px-6 py-3 text-sm hover:border-black"
           >
             Back
-          </a>
+          </Link>
           <button
             type="button"
             disabled={!allItems.length}
