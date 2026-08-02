@@ -8,7 +8,7 @@ import type { CategoryId, OrderItem } from "@/lib/ordering/types";
 import { useMemo, useState } from "react";
 import ItemForm from "./ItemForm";
 
-const VALID_IDS = new Set(CATEGORIES.map((c) => c.id));
+const VALID_IDS = new Set<CategoryId>(CATEGORIES.map((c) => c.id));
 
 function itemLabel(item: OrderItem) {
   if (item.category === "paintings") {

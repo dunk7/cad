@@ -269,7 +269,9 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
     measureUnit: "in",
     weight: initial?.weight ?? "",
     weightUnit: "lb",
-    pieceType: initial?.pieceType || DEFAULT_PIECE_TYPE,
+    pieceType:
+      (initial && "pieceType" in initial ? initial.pieceType : undefined) ||
+      DEFAULT_PIECE_TYPE,
     specialInstructions: initial?.specialInstructions || "",
     photoUrls: initial?.photoUrls || [],
     existingDamage: initial?.existingDamage || "no",
@@ -737,7 +739,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
           Would you like us to install this piece?
         </label>
 
-        {form.install && (
+        {Boolean(form.install) && (
           <div className="space-y-4 border border-black/10 bg-white p-4">
             <div>
               <label className={label}>Where will this piece be installed?</label>
