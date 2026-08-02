@@ -10,6 +10,24 @@ import ItemForm from "./ItemForm";
 
 const VALID_IDS = new Set<CategoryId>(CATEGORIES.map((c) => c.id));
 
+function PlusIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+      className={className}
+    >
+      <path
+        d="M8 3v10M3 8h10"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function itemLabel(item: OrderItem) {
   if (item.category === "paintings") {
     if (item.pieceType === "Other wall art" && item.pieceDescription) {
@@ -88,16 +106,13 @@ export default function ItemsStep() {
       )}
 
       {mode === "list" && allItems.length === 0 && (
-        <div className="mt-10 flex flex-col items-center border border-dashed border-black/20 px-6 py-12 text-center">
-          <p className="text-base font-medium text-foreground">No items yet</p>
-          <p className="mt-2 max-w-sm text-sm text-muted">
-            Add your first piece. You can come back and add more afterward.
-          </p>
+        <div className="mt-10 flex flex-col items-center">
           <button
             type="button"
             onClick={startAdd}
-            className="mt-6 bg-black px-8 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
+            className="inline-flex items-center gap-2.5 bg-black px-12 py-4 text-base font-medium text-white transition hover:bg-neutral-800 sm:px-14 sm:py-5 sm:text-lg"
           >
+            <PlusIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             Add an Item
           </button>
         </div>
@@ -149,8 +164,9 @@ export default function ItemsStep() {
           <button
             type="button"
             onClick={startAdd}
-            className="w-full border border-dashed border-black/30 py-4 text-sm font-medium hover:border-black"
+            className="inline-flex w-full items-center justify-center gap-2 border border-dashed border-black/30 py-4 text-sm font-medium outline-none transition duration-200 hover:border-transparent hover:shadow-[0_0_0_6px_#16a34a,0_0_20px_8px_rgba(22,163,74,0.45),0_0_40px_16px_rgba(22,163,74,0.25)] focus-visible:border-transparent focus-visible:shadow-[0_0_0_6px_#16a34a,0_0_20px_8px_rgba(22,163,74,0.45),0_0_40px_16px_rgba(22,163,74,0.25)]"
           >
+            <PlusIcon />
             Add Another Item
           </button>
         </div>
@@ -167,18 +183,18 @@ export default function ItemsStep() {
                 key={cat.id}
                 type="button"
                 onClick={() => pickCategory(cat.id)}
-                className="group relative aspect-[4/3] overflow-hidden text-left outline-none transition duration-300 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.28)]"
+                className="group relative aspect-[4/3] overflow-hidden text-left outline-none transition duration-200 shadow-[0_0_0_1px_rgba(0,0,0,0.12)] hover:shadow-[0_0_0_6px_#16a34a,0_0_20px_8px_rgba(22,163,74,0.45),0_0_40px_16px_rgba(22,163,74,0.25)] focus-visible:shadow-[0_0_0_6px_#16a34a,0_0_20px_8px_rgba(22,163,74,0.45),0_0_40px_16px_rgba(22,163,74,0.25)]"
               >
                 <Image
                   src={cat.image}
                   alt=""
                   fill
-                  className={`object-cover transition duration-500 ease-out group-hover:scale-[1.04] ${
+                  className={`object-cover transition duration-500 ease-out group-hover:scale-[1.05] ${
                     cat.id === "paintings" ? "object-center" : ""
                   }`}
                   sizes="(min-width: 640px) 40vw, 50vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/5 transition duration-300 group-hover:from-black/80" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/5 transition duration-300 group-hover:from-black/85 group-hover:via-black/35" />
                 <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-5">
                   <span className="block text-[12px] font-medium leading-snug tracking-tight text-white sm:text-lg">
                     {cat.name}

@@ -62,6 +62,7 @@ export function evaluateAlerts(
       if (
         p.install &&
         (p.installLocation === "Above standard gallery level" ||
+          p.installLocation === "Above a fireplace or mantel" ||
           p.installLocation === "In a stairwell" ||
           p.aboveStairs === "Yes")
       ) {

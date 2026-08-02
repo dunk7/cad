@@ -19,13 +19,12 @@ const FRAME_CHARS = [
 
 const WRAP_OPTIONS = [
   "Unwrapped",
-  "Hanging on a wall",
-  "Wrapped in bubble wrap",
-  "Wrapped in paper",
   "Wrapped in plastic",
-  "Blanket wrapped",
+  "Wrapped in bubble",
+  "Wrapped in paper",
   "In a cardboard box",
   "In a wooden crate",
+  "Hanging on a wall",
   "Not sure",
   "Other",
 ];
@@ -45,6 +44,38 @@ const HARDWARE = [
 const SHOW_PHOTO_UPLOAD = false;
 
 const DEFAULT_PIECE_TYPE = "Painting or framed artwork";
+
+const INSTALL_LOCATIONS = [
+  "Standard eye or gallery level",
+  "Above furniture",
+  "Above a fireplace or mantel",
+  "Above standard gallery level",
+  "In a stairwell",
+  "Other",
+] as const;
+
+const STAIR_TYPES = [
+  "Straight",
+  "With a turn",
+  "Spiral",
+  "Other",
+] as const;
+
+/** Locations that need height / access detail beyond wall material. */
+const INSTALL_NEEDS_HEIGHT = new Set<string>([
+  "Above a fireplace or mantel",
+  "Above standard gallery level",
+  "In a stairwell",
+  "Other",
+]);
+
+function needsExplain(value: unknown) {
+  return value === "Other" || value === "Not sure";
+}
+
+function installNeedsHeight(location: unknown) {
+  return INSTALL_NEEDS_HEIGHT.has(String(location || ""));
+}
 
 const field =
   "w-full border border-black/20 bg-white px-3 py-2.5 text-sm outline-none focus:border-black";
@@ -231,7 +262,7 @@ function DeclaredValueInput({
 }) {
   return (
     <div>
-      <label className={label}>Declared value</label>
+      <label className={label}>Declared value of this item</label>
       <div className="flex overflow-hidden border border-black/20 bg-white focus-within:border-black">
         <span
           className="flex select-none items-center border-r border-black/10 bg-[#f3f3f3] px-3 text-sm font-medium text-muted"
@@ -246,7 +277,7 @@ function DeclaredValueInput({
           value={formatDeclaredValue(value)}
           onChange={(e) => onChange(parseDeclaredValue(e.target.value))}
           placeholder="0"
-          aria-label="Declared value in US dollars"
+          aria-label="Declared value of this item in US dollars"
         />
       </div>
     </div>
@@ -333,6 +364,20 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       alert("Please describe this wall art.");
       return;
     }
+    if (
+      form.currentWrapping === "Other" &&
+      !String(form.currentWrappingOther || "").trim()
+    ) {
+      alert("Please explain how the piece is wrapped or prepared.");
+      return;
+    }
+    if (
+      form.hardware === "Other" &&
+      !String(form.hardwareOther || "").trim()
+    ) {
+      alert("Please explain what hardware is attached.");
+      return;
+    }
     goToPaintingPage(3);
   }
 
@@ -345,6 +390,48 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
   }
 
   function savePainting() {
+    const install = Boolean(form.install);
+    const installLocation = String(
+      form.installLocation || "Standard eye or gallery level"
+    );
+
+    if (install) {
+      if (
+        installLocation === "Other" &&
+        !String(form.installLocationOther || "").trim()
+      ) {
+        alert("Please explain where this piece will be installed.");
+        return;
+      }
+      if (
+        installNeedsHeight(installLocation) &&
+        !String(form.installHeight || "").trim()
+      ) {
+        alert("Please enter the height from the floor to the bottom of the piece.");
+        return;
+      }
+      if (installLocation === "In a stairwell") {
+        if (!String(form.stairType || "").trim()) {
+          alert("Please tell us what the staircase looks like.");
+          return;
+        }
+        if (
+          form.stairType === "Other" &&
+          !String(form.stairTypeOther || "").trim()
+        ) {
+          alert("Please briefly describe the staircase.");
+          return;
+        }
+      }
+      if (
+        form.wallMaterial === "Other" &&
+        !String(form.wallMaterialOther || "").trim()
+      ) {
+        alert("Please explain the wall material.");
+        return;
+      }
+    }
+
     const item: OrderItem = {
       id: String(form.id),
       category: "paintings",
@@ -369,16 +456,44 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       frameOther: askAboutFrame ? String(form.frameOther || "") : "",
       glazing: "",
       currentWrapping: String(form.currentWrapping || "Unwrapped"),
+      currentWrappingOther: needsExplain(form.currentWrapping)
+        ? String(form.currentWrappingOther || "")
+        : "",
       hardware: String(form.hardware || "Not sure"),
+      hardwareOther: needsExplain(form.hardware)
+        ? String(form.hardwareOther || "")
+        : "",
       removeFromWall: Boolean(form.removeFromWall),
-      install: Boolean(form.install),
-      installLocation: String(form.installLocation || ""),
-      installHeight: String(form.installHeight || ""),
-      wallMaterial: String(form.wallMaterial || ""),
-      aboveStairs: String(form.aboveStairs || ""),
+      install,
+      installLocation: install ? installLocation : "",
+      installLocationOther:
+        install && installLocation === "Other"
+          ? String(form.installLocationOther || "")
+          : "",
+      installHeight:
+        install && installNeedsHeight(installLocation)
+          ? String(form.installHeight || "")
+          : "",
+      wallMaterial: install ? String(form.wallMaterial || "Drywall") : "",
+      wallMaterialOther:
+        install && needsExplain(form.wallMaterial)
+          ? String(form.wallMaterialOther || "")
+          : "",
+      stairType:
+        install && installLocation === "In a stairwell"
+          ? String(form.stairType || "")
+          : "",
+      stairTypeOther:
+        install &&
+        installLocation === "In a stairwell" &&
+        form.stairType === "Other"
+          ? String(form.stairTypeOther || "")
+          : "",
+      aboveStairs:
+        install && installLocation === "In a stairwell" ? "Yes" : "No",
       obstacleBeneath: false,
       obstacleNotes: "",
-      placementKnown: String(form.placementKnown || ""),
+      placementKnown: "",
     };
     onSave(item);
   }
@@ -412,6 +527,13 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         alert("Depth is required for sculptures.");
         return;
       }
+      if (
+        form.currentWrapping === "Other" &&
+        !String(form.currentWrappingOther || "").trim()
+      ) {
+        alert("Please explain how the piece is wrapped or prepared.");
+        return;
+      }
       item = {
         ...base,
         category: "sculptures",
@@ -421,6 +543,9 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         componentCount: form.componentCount ? Number(form.componentCount) : undefined,
         handling: (form.handling as string[]) || [],
         currentWrapping: String(form.currentWrapping || ""),
+        currentWrappingOther: needsExplain(form.currentWrapping)
+          ? String(form.currentWrappingOther || "")
+          : "",
         deliveryService: String(form.deliveryService || ""),
       };
     } else if (category === "furniture") {
@@ -676,6 +801,17 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
               ))}
             </select>
           </div>
+          {needsExplain(form.currentWrapping) && (
+            <div>
+              <label className={label}>Explain</label>
+              <input
+                className={field}
+                value={String(form.currentWrappingOther || "")}
+                onChange={(e) => set("currentWrappingOther", e.target.value)}
+                placeholder="Tell us more about how it is wrapped or prepared"
+              />
+            </div>
+          )}
 
           <div>
             <label className={label}>What hardware is attached to the back?</label>
@@ -689,6 +825,17 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
               ))}
             </select>
           </div>
+          {needsExplain(form.hardware) && (
+            <div>
+              <label className={label}>Explain</label>
+              <input
+                className={field}
+                value={String(form.hardwareOther || "")}
+                onChange={(e) => set("hardwareOther", e.target.value)}
+                placeholder="Tell us more about the hardware"
+              />
+            </div>
+          )}
 
           {form.currentWrapping === "Hanging on a wall" && (
             <label className="flex items-center gap-2 text-sm">
@@ -700,6 +847,11 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
               Remove this piece from the wall
             </label>
           )}
+
+          <DeclaredValueInput
+            value={form.declaredValueDollars}
+            onChange={(v) => set("declaredValueDollars", v)}
+          />
 
           <div className="flex flex-wrap justify-end gap-3 pt-2">
             <button
@@ -725,11 +877,6 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       <div className={shellClass}>
         <p className="text-center text-sm text-muted">{summary}</p>
 
-        <DeclaredValueInput
-          value={form.declaredValueDollars}
-          onChange={(v) => set("declaredValueDollars", v)}
-        />
-
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -740,26 +887,108 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         </label>
 
         {Boolean(form.install) && (
-          <div className="space-y-4 border border-black/10 bg-white p-4">
+          <div className="space-y-5">
             <div>
-              <label className={label}>Where will this piece be installed?</label>
+              <label className={label}>Where will this piece hang?</label>
               <select
                 className={field}
-                value={String(form.installLocation || "Standard eye or gallery level")}
+                value={String(
+                  form.installLocation || "Standard eye or gallery level"
+                )}
                 onChange={(e) => set("installLocation", e.target.value)}
               >
-                {[
-                  "Standard eye or gallery level",
-                  "Above furniture",
-                  "Above a fireplace or mantel",
-                  "Above standard gallery level",
-                  "In a stairwell",
-                  "Other",
-                ].map((o) => (
+                {INSTALL_LOCATIONS.map((o) => (
                   <option key={o}>{o}</option>
                 ))}
               </select>
             </div>
+
+            {form.installLocation === "Other" && (
+              <div>
+                <label className={label}>Explain</label>
+                <input
+                  className={field}
+                  value={String(form.installLocationOther || "")}
+                  onChange={(e) => set("installLocationOther", e.target.value)}
+                  placeholder="e.g. over a doorway, in a double-height entry"
+                />
+              </div>
+            )}
+
+            {installNeedsHeight(form.installLocation) && (
+              <div>
+                <label className={label}>
+                  {form.installLocation === "In a stairwell"
+                    ? "Height to bottom of piece"
+                    : "Height from floor to bottom of piece"}
+                </label>
+                <div className="flex overflow-hidden border border-black/20 bg-white focus-within:border-black">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-full bg-transparent px-3 py-2.5 text-sm tabular-nums outline-none"
+                    value={String(form.installHeight || "")}
+                    onChange={(e) =>
+                      set(
+                        "installHeight",
+                        e.target.value.replace(/[^\d.]/g, "")
+                      )
+                    }
+                    placeholder={
+                      form.installLocation === "In a stairwell"
+                        ? "From the landing or floor below"
+                        : "e.g. 72"
+                    }
+                  />
+                  <span
+                    className="flex select-none items-center border-l border-black/10 bg-[#f3f3f3] px-3 text-sm font-medium text-muted"
+                    aria-hidden="true"
+                  >
+                    in
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs text-muted">
+                  Measure up to where the bottom of the artwork will sit.
+                </p>
+              </div>
+            )}
+
+            {form.installLocation === "In a stairwell" && (
+              <div>
+                <label className={label}>What does the staircase look like?</label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {STAIR_TYPES.map((o) => {
+                    const selected = String(form.stairType || "") === o;
+                    return (
+                      <button
+                        key={o}
+                        type="button"
+                        onClick={() => set("stairType", o)}
+                        className={`border px-3 py-2.5 text-sm transition ${
+                          selected
+                            ? "border-black bg-black text-white"
+                            : "border-black/20 bg-white hover:border-black"
+                        }`}
+                      >
+                        {o}
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.stairType === "Other" && (
+                  <div className="mt-3">
+                    <label className={label}>Explain</label>
+                    <input
+                      className={field}
+                      value={String(form.stairTypeOther || "")}
+                      onChange={(e) => set("stairTypeOther", e.target.value)}
+                      placeholder="e.g. curved open staircase, switchback"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <label className={label}>Wall material</label>
               <select
@@ -783,18 +1012,17 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
                 ))}
               </select>
             </div>
-            <div>
-              <label className={label}>Is the installation directly above stairs?</label>
-              <select
-                className={field}
-                value={String(form.aboveStairs || "No")}
-                onChange={(e) => set("aboveStairs", e.target.value)}
-              >
-                <option>Yes</option>
-                <option>No</option>
-                <option>Not sure</option>
-              </select>
-            </div>
+            {needsExplain(form.wallMaterial) && (
+              <div>
+                <label className={label}>Explain</label>
+                <input
+                  className={field}
+                  value={String(form.wallMaterialOther || "")}
+                  onChange={(e) => set("wallMaterialOther", e.target.value)}
+                  placeholder="Tell us what you know about the wall"
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -1013,6 +1241,17 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
               ))}
             </select>
           </div>
+          {needsExplain(form.currentWrapping) && (
+            <div>
+              <label className={label}>Explain</label>
+              <input
+                className={field}
+                value={String(form.currentWrappingOther || "")}
+                onChange={(e) => set("currentWrappingOther", e.target.value)}
+                placeholder="Tell us more about how it is wrapped or prepared"
+              />
+            </div>
+          )}
         </>
       )}
 

@@ -37,12 +37,20 @@ export type PaintingItem = OrderItemBase & {
   frameOther?: string;
   glazing?: string;
   currentWrapping?: string;
+  currentWrappingOther?: string;
   hardware?: string;
+  hardwareOther?: string;
   removeFromWall?: boolean;
   install?: boolean;
   installLocation?: string;
+  installLocationOther?: string;
+  /** Height from floor to bottom of piece, in inches */
   installHeight?: string;
   wallMaterial?: string;
+  wallMaterialOther?: string;
+  /** Stair shape when installLocation is a stairwell */
+  stairType?: string;
+  stairTypeOther?: string;
   aboveStairs?: string;
   obstacleBeneath?: boolean;
   obstacleNotes?: string;
@@ -57,6 +65,7 @@ export type SculptureItem = OrderItemBase & {
   componentCount?: number;
   handling?: string[];
   currentWrapping?: string;
+  currentWrappingOther?: string;
   deliveryService?: string;
 };
 
