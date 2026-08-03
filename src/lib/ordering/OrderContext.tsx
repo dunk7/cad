@@ -24,8 +24,8 @@ const ALLOWED_CATEGORIES = new Set(["paintings", "sculptures", "furniture", "dec
 const emptyDraft = (): DraftOrder => ({
   categories: [],
   items: [],
-  pickup: { state: "CA" },
-  delivery: { state: "CA" },
+  pickup: { state: "CA", phoneType: "cell" },
+  delivery: { state: "CA", phoneType: "cell" },
   customer: {},
   declaredValueDollars: 0,
   declaredValueProtection: true,
@@ -44,7 +44,11 @@ function withDeclaredSum(d: DraftOrder): DraftOrder {
 function withDefaultState(
   loc: Partial<DraftOrder["pickup"]> | undefined
 ): Partial<DraftOrder["pickup"]> {
-  return { ...loc, state: loc?.state?.trim() || "CA" };
+  return {
+    ...loc,
+    state: loc?.state?.trim() || "CA",
+    phoneType: loc?.phoneType === "landline" ? "landline" : "cell",
+  };
 }
 
 function sanitizeDraft(parsed: Partial<DraftOrder>): DraftOrder {

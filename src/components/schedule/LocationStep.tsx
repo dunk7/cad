@@ -2,6 +2,7 @@
 
 import { useOrder } from "@/lib/ordering/OrderContext";
 import type { LocationDetails } from "@/lib/ordering/types";
+import PhoneField from "@/components/schedule/PhoneField";
 import { useEffect } from "react";
 
 const field =
@@ -54,16 +55,12 @@ export default function LocationStep() {
             onChange={(e) => setLoc({ name: e.target.value })}
           />
         </div>
-        <div>
-          <label className={label}>Phone</label>
-          <input
-            type="tel"
-            inputMode="tel"
-            className={field}
-            value={data.phone || ""}
-            onChange={(e) => setLoc({ phone: e.target.value })}
-          />
-        </div>
+        <PhoneField
+          id="delivery-phone"
+          value={data.phone || ""}
+          phoneType={data.phoneType}
+          onChange={setLoc}
+        />
         <div>
           <label className={label}>Street address</label>
           <input

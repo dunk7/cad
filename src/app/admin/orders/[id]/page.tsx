@@ -145,10 +145,20 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 function Addr({ data }: { data: Record<string, string> }) {
+  const phoneTypeLabel =
+    data.phoneType === "landline"
+      ? "Landline"
+      : data.phoneType === "cell"
+        ? "Cell phone"
+        : null;
+
   return (
     <div className="space-y-1 text-sm">
       <p className="font-medium">{data.name}</p>
-      <p className="text-muted">{data.phone}</p>
+      <p className="text-muted">
+        {data.phone}
+        {phoneTypeLabel ? ` · ${phoneTypeLabel}` : ""}
+      </p>
       <p>
         {data.address1}
         {data.address2 ? `, ${data.address2}` : ""}

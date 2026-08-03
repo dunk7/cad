@@ -103,6 +103,8 @@ export type OrderItem =
 export type LocationDetails = {
   name: string;
   phone: string;
+  /** Whether the contact number is a cell or landline. */
+  phoneType?: "cell" | "landline";
   email?: string;
   address1: string;
   address2?: string;

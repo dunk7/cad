@@ -3,6 +3,7 @@
 import { defaultRouteSlots, type RouteSlot } from "@/lib/ordering/defaults";
 import { useOrder } from "@/lib/ordering/OrderContext";
 import type { LocationDetails } from "@/lib/ordering/types";
+import PhoneField from "@/components/schedule/PhoneField";
 import { useEffect, useState } from "react";
 
 const field =
@@ -112,17 +113,12 @@ export default function PickupStep() {
                 autoComplete="name"
               />
             </div>
-            <div>
-              <label className={label}>Phone</label>
-              <input
-                type="tel"
-                inputMode="tel"
-                className={field}
-                value={data.phone || ""}
-                onChange={(e) => setLoc({ phone: e.target.value })}
-                autoComplete="tel"
-              />
-            </div>
+            <PhoneField
+              id="pickup-phone"
+              value={data.phone || ""}
+              phoneType={data.phoneType}
+              onChange={setLoc}
+            />
             <div>
               <label className={label}>Email</label>
               <input
