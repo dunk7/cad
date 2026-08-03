@@ -1129,7 +1129,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
             onClick={savePainting}
             className="border border-black bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-white hover:text-black"
           >
-            Save
+            Next
           </button>
         </div>
       </div>
@@ -1406,7 +1406,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
           type="submit"
           className="border border-black bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-white hover:text-black"
         >
-          Save & Continue
+          Next
         </button>
       </div>
     </form>
