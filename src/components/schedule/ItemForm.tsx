@@ -287,6 +287,62 @@ function DeclaredValueInput({
   );
 }
 
+function YesNoChoice({
+  question,
+  hint,
+  value,
+  onChange,
+}: {
+  question: string;
+  hint?: string;
+  value: "" | "yes" | "no";
+  onChange: (v: "yes" | "no") => void;
+}) {
+  return (
+    <fieldset>
+      <legend className={label}>{question}</legend>
+      {hint ? <p className="mb-3 text-xs text-muted">{hint}</p> : null}
+      <div
+        className="grid grid-cols-2 gap-2"
+        role="radiogroup"
+        aria-label={question}
+      >
+        {(
+          [
+            { id: "yes", text: "Yes" },
+            { id: "no", text: "No" },
+          ] as const
+        ).map((opt) => {
+          const selected = value === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(opt.id)}
+              className={`border px-4 py-3 text-sm font-medium transition duration-200 ${
+                selected
+                  ? "border-black bg-black text-white"
+                  : "border-black/20 bg-white hover:border-black"
+              }`}
+            >
+              {opt.text}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function initialInstallChoice(initial?: OrderItem): "" | "yes" | "no" {
+  if (!initial || !("install" in initial) || typeof initial.install !== "boolean") {
+    return "";
+  }
+  return initial.install ? "yes" : "no";
+}
+
 export default function ItemForm({ category, initial, onSave, onCancel }: Props) {
   const { newItemId } = useOrder();
   const [uploading, setUploading] = useState(false);
@@ -311,6 +367,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
     existingDamage: initial?.existingDamage || "no",
     damageNotes: initial?.damageNotes || "",
     declaredValueDollars: initial?.declaredValueDollars ?? "",
+    installChoice: initialInstallChoice(initial),
   }));
 
   function set<K extends string>(key: K, value: unknown) {
@@ -395,7 +452,12 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
   }
 
   function savePainting() {
-    const install = Boolean(form.install);
+    const installChoice = form.installChoice;
+    if (installChoice !== "yes" && installChoice !== "no") {
+      alert("Please choose Yes or No for installation.");
+      return;
+    }
+    const install = installChoice === "yes";
     const installLocation = String(
       form.installLocation || "Standard eye or gallery level"
     );
@@ -882,17 +944,28 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       <div className={shellClass}>
         <p className="text-center text-sm text-muted">{summary}</p>
 
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={Boolean(form.install)}
-            onChange={(e) => set("install", e.target.checked)}
-          />
-          Would you like us to install this piece?
-        </label>
+        <YesNoChoice
+          question="Would you like us to install this piece?"
+          hint="Required. Select Yes to add install details, or No to continue without installation."
+          value={
+            form.installChoice === "yes" || form.installChoice === "no"
+              ? form.installChoice
+              : ""
+          }
+          onChange={(v) => set("installChoice", v)}
+        />
 
-        {Boolean(form.install) && (
-          <div className="space-y-5">
+        {form.installChoice === "yes" && (
+          <div className="animate-install-details space-y-5 border-t border-black/10 pt-5">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Install details
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                A little context helps us hang the piece correctly on arrival.
+              </p>
+            </div>
+
             <div>
               <label className={label}>Where will this piece hang?</label>
               <select
@@ -1031,6 +1104,12 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
           </div>
         )}
 
+        {form.installChoice === "no" && (
+          <p className="animate-install-details text-sm text-muted">
+            No installation needed — we’ll deliver and place as requested.
+          </p>
+        )}
+
         <div>
           <label className={label}>Special instructions for this item</label>
           <textarea
@@ -1055,7 +1134,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
             onClick={savePainting}
             className="border border-black bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-white hover:text-black"
           >
-            Save
+            Next
           </button>
         </div>
       </div>
@@ -1332,7 +1411,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
           type="submit"
           className="border border-black bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-white hover:text-black"
         >
-          Save & Continue
+          Next
         </button>
       </div>
     </form>
