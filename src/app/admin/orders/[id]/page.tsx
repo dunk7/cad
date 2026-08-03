@@ -16,8 +16,14 @@ export default async function AdminOrderDetailPage({
   if (!order) notFound();
 
   const items = JSON.parse(order.itemsJson || "[]") as Record<string, unknown>[];
-  const pickup = JSON.parse(order.pickupJson || "{}") as Record<string, string>;
-  const delivery = JSON.parse(order.deliveryJson || "{}") as Record<string, string>;
+  const pickup = JSON.parse(order.pickupJson || "{}") as Record<
+    string,
+    string | number | undefined
+  >;
+  const delivery = JSON.parse(order.deliveryJson || "{}") as Record<
+    string,
+    string | number | undefined
+  >;
   const schedule = JSON.parse(order.scheduleJson || "{}") as Record<string, string>;
   const pricing = JSON.parse(order.pricingJson || "{}") as {
     lines?: { label: string; amountCents: number }[];
@@ -144,12 +150,18 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function Addr({ data }: { data: Record<string, string> }) {
+function Addr({ data }: { data: Record<string, string | number | undefined> }) {
   const phoneTypeLabel =
     data.phoneType === "landline"
       ? "Landline"
       : data.phoneType === "cell"
         ? "Cell phone"
+        : null;
+  const floorLabel =
+    typeof data.floor === "string" && data.floor.trim()
+      ? data.floor
+      : data.floorLevel != null
+        ? `Floor ${data.floorLevel}`
         : null;
 
   return (
@@ -166,6 +178,10 @@ function Addr({ data }: { data: Record<string, string> }) {
       <p>
         {data.city}, {data.state} {data.zip}
       </p>
+      {floorLabel && <p className="pt-2 text-muted">{floorLabel}</p>}
+      {data.stairsFlights != null && data.stairsFlights !== "" && (
+        <p className="text-muted">Stairs: {data.stairsFlights} flight(s)</p>
+      )}
       {data.parkingInstructions && (
         <p className="pt-2 text-muted">Parking: {data.parkingInstructions}</p>
       )}

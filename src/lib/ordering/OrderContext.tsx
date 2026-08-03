@@ -17,6 +17,11 @@ import type {
 } from "@/lib/ordering/types";
 import { randomUUID } from "@/lib/ordering/id";
 import { totalDeclaredValueDollars } from "@/lib/ordering/pricing";
+import {
+  DEFAULT_FLOOR_ACCESS,
+  floorAccessLabel,
+  isFloorAccess,
+} from "@/lib/ordering/floorAccess";
 
 const STORAGE_KEY = "cad_order_draft_v2";
 const ALLOWED_CATEGORIES = new Set(["paintings", "sculptures", "furniture", "decor"]);
@@ -24,8 +29,8 @@ const ALLOWED_CATEGORIES = new Set(["paintings", "sculptures", "furniture", "dec
 const emptyDraft = (): DraftOrder => ({
   categories: [],
   items: [],
-  pickup: { state: "CA", phoneType: "cell" },
-  delivery: { state: "CA", phoneType: "cell" },
+  pickup: { state: "CA", phoneType: "cell", floorAccess: DEFAULT_FLOOR_ACCESS },
+  delivery: { state: "CA", phoneType: "cell", floorAccess: DEFAULT_FLOOR_ACCESS },
   customer: {},
   declaredValueDollars: 0,
   declaredValueProtection: true,
@@ -42,12 +47,24 @@ function withDeclaredSum(d: DraftOrder): DraftOrder {
 }
 
 function withDefaultState(
-  loc: Partial<DraftOrder["pickup"]> | undefined
+  loc: Partial<DraftOrder["pickup"]> | undefined,
+  kind: "pickup" | "delivery"
 ): Partial<DraftOrder["pickup"]> {
+  const floorAccess = isFloorAccess(loc?.floorAccess)
+    ? loc.floorAccess
+    : DEFAULT_FLOOR_ACCESS;
   return {
     ...loc,
     state: loc?.state?.trim() || "CA",
     phoneType: loc?.phoneType === "landline" ? "landline" : "cell",
+    floorAccess,
+    floor:
+      loc?.floor?.trim() ||
+      floorAccessLabel(
+        floorAccess,
+        kind,
+        floorAccess === "level_3_plus" ? loc?.floorLevel : undefined
+      ),
   };
 }
 
@@ -55,8 +72,8 @@ function sanitizeDraft(parsed: Partial<DraftOrder>): DraftOrder {
   return withDeclaredSum({
     ...emptyDraft(),
     ...parsed,
-    pickup: withDefaultState(parsed.pickup),
-    delivery: withDefaultState(parsed.delivery),
+    pickup: withDefaultState(parsed.pickup, "pickup"),
+    delivery: withDefaultState(parsed.delivery, "delivery"),
     categories: (parsed.categories || []).filter((c) => ALLOWED_CATEGORIES.has(c)),
     items: (parsed.items || []).filter((i) => ALLOWED_CATEGORIES.has(i.category)),
     declaredValueProtection:

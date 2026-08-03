@@ -2,6 +2,7 @@
 
 import { useOrder } from "@/lib/ordering/OrderContext";
 import type { LocationDetails } from "@/lib/ordering/types";
+import FloorAccessFields from "@/components/schedule/FloorAccessFields";
 import PhoneField from "@/components/schedule/PhoneField";
 import { useEffect } from "react";
 
@@ -98,44 +99,7 @@ export default function LocationStep() {
             />
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <label className={label}>Floor</label>
-            <input
-              className={field}
-              value={data.floor || ""}
-              onChange={(e) => setLoc({ floor: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className={label}>Stair flights</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              className={field}
-              value={data.stairsFlights ?? ""}
-              onChange={(e) =>
-                setLoc({
-                  stairsFlights: e.target.value === "" ? undefined : Number(e.target.value),
-                })
-              }
-            />
-          </div>
-          <div>
-            <label className={label}>Elevator</label>
-            <select
-              className={field}
-              value={data.elevator || "unsure"}
-              onChange={(e) =>
-                setLoc({ elevator: e.target.value as LocationDetails["elevator"] })
-              }
-            >
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
-              <option value="unsure">Not sure</option>
-            </select>
-          </div>
-        </div>
+        <FloorAccessFields kind="delivery" data={data} onChange={setLoc} />
         <div>
           <label className={label}>
             Parking and access instructions{" "}
