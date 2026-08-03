@@ -128,14 +128,17 @@ function formatDeclaredValue(value: unknown) {
     typeof value === "number"
       ? value
       : Number(String(value).replace(/,/g, ""));
-  if (!Number.isFinite(n)) return "";
-  return Math.max(0, Math.round(n)).toLocaleString("en-US");
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return Math.round(n).toLocaleString("en-US");
 }
 
 function parseDeclaredValue(raw: string): number | "" {
   const digits = raw.replace(/[^\d]/g, "");
   if (!digits) return "";
-  return Number(digits);
+  const n = Number(digits);
+  // Disallow zero — treat it as cleared rather than a declared value.
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return n;
 }
 
 function PaintingAspectPreview({
@@ -276,7 +279,7 @@ function DeclaredValueInput({
           className="w-full bg-transparent px-3 py-2.5 text-sm tabular-nums outline-none"
           value={formatDeclaredValue(value)}
           onChange={(e) => onChange(parseDeclaredValue(e.target.value))}
-          placeholder="0"
+          placeholder="1,000"
           aria-label="Declared value of this item in US dollars"
         />
       </div>
@@ -383,10 +386,12 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
 
   function parseDeclared() {
     if (form.declaredValueDollars === "") return 0;
-    if (typeof form.declaredValueDollars === "number") {
-      return Math.max(0, form.declaredValueDollars);
-    }
-    return Math.max(0, Number(String(form.declaredValueDollars).replace(/,/g, "")) || 0);
+    const n =
+      typeof form.declaredValueDollars === "number"
+        ? form.declaredValueDollars
+        : Number(String(form.declaredValueDollars).replace(/,/g, ""));
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return n;
   }
 
   function savePainting() {
