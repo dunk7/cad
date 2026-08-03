@@ -88,6 +88,13 @@ export default function ReviewStep() {
             <p className="mt-2 text-muted">
               {draft.pickup.name}
               <br />
+              {draft.pickup.phone}
+              {draft.pickup.phoneType === "landline"
+                ? " · Landline"
+                : draft.pickup.phone
+                  ? " · Cell phone"
+                  : ""}
+              <br />
               {draft.pickup.address1}
               <br />
               {draft.pickup.city}, {draft.pickup.state} {draft.pickup.zip}
@@ -104,6 +111,13 @@ export default function ReviewStep() {
             <h2 className="font-medium">Delivery</h2>
             <p className="mt-2 text-muted">
               {draft.delivery.name}
+              <br />
+              {draft.delivery.phone}
+              {draft.delivery.phoneType === "landline"
+                ? " · Landline"
+                : draft.delivery.phone
+                  ? " · Cell phone"
+                  : ""}
               <br />
               {draft.delivery.address1}
               <br />

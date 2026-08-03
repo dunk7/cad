@@ -100,16 +100,29 @@ export type OrderItem =
   | DecorItem
   | OtherItem;
 
+export type FloorAccess =
+  | "first_no_steps"
+  | "first_few_steps"
+  | "second"
+  | "level_3_plus";
+
 export type LocationDetails = {
   name: string;
   phone: string;
+  /** Whether the contact number is a cell or landline. */
+  phoneType?: "cell" | "landline";
   email?: string;
   address1: string;
   address2?: string;
   city: string;
   state: string;
   zip: string;
+  /** Legacy free-text floor, or display summary. */
   floor?: string;
+  /** Structured access level for pickup/delivery. */
+  floorAccess?: FloorAccess;
+  /** Specific floor number when floorAccess is level_3_plus (3–30). */
+  floorLevel?: number;
   stairsFlights?: number;
   elevator?: "yes" | "no" | "unsure";
   parkingInstructions?: string;
