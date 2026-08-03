@@ -119,11 +119,7 @@ a {
   animation: progress-energy-spark 2.4s ease-in-out infinite;
 }
 
-<<<<<<< HEAD
 @keyframes install-details-in {
-=======
-@keyframes floor-reveal-in {
->>>>>>> origin/cursor/phone-type-toggle-7640
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -134,13 +130,23 @@ a {
   }
 }
 
-<<<<<<< HEAD
 @utility animate-install-details {
   animation: install-details-in 0.28s ease-out both;
-=======
+}
+
+@keyframes floor-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @utility animate-floor-reveal {
   animation: floor-reveal-in 0.28s ease-out both;
->>>>>>> origin/cursor/phone-type-toggle-7640
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -148,11 +154,8 @@ a {
   .animate-progress-ring,
   .animate-progress-energy,
   .animate-progress-spark,
-<<<<<<< HEAD
-  .animate-install-details {
-=======
+  .animate-install-details,
   .animate-floor-reveal {
->>>>>>> origin/cursor/phone-type-toggle-7640
     animation: none !important;
   }
 }
