@@ -7,9 +7,16 @@ import FloorAccessFields from "@/components/schedule/FloorAccessFields";
 import PhoneField from "@/components/schedule/PhoneField";
 import { useEffect, useState } from "react";
 
-const field =
-  "w-full border border-black/20 bg-white px-3 py-2.5 text-sm outline-none focus:border-black";
 const label = "mb-1 block text-sm font-medium";
+
+function getFieldClass(error: boolean, value?: string) {
+  const base =
+    "w-full border bg-white px-3 py-2.5 text-sm outline-none transition-all duration-200";
+  if (error) {
+    return `${base} border-red-500 animate-input-error`;
+  }
+  return `${base} border-black/20 focus:border-emerald-500 focus:animate-input-focus`;
+}
 
 const PICKUP_SLOTS: RouteSlot[] = defaultRouteSlots;
 
@@ -28,6 +35,8 @@ export default function PickupStep() {
   const { draft, setDraft, setStep } = useOrder();
   const data = draft.pickup;
   const [substep, setSubstep] = useState(0);
+  const [errors, setErrors] = useState<Set<string>>(new Set());
+  const [successAnimation, setSuccessAnimation] = useState(false);
 
   useEffect(() => {
     if (!data.state?.trim()) {
@@ -52,34 +61,57 @@ export default function PickupStep() {
   }
 
   function continueNext() {
+    const newErrors = new Set<string>();
+
     if (substep === 0) {
-      if (!data.name?.trim() || !data.phone?.trim() || !draft.customer.email?.trim()) {
-        alert("Please enter contact name, phone, and email.");
+      if (!data.name?.trim()) newErrors.add("name");
+      if (!data.phone?.trim()) newErrors.add("phone");
+      if (!draft.customer.email?.trim()) newErrors.add("email");
+
+      if (newErrors.size > 0) {
+        setErrors(newErrors);
         return;
       }
-      setSubstep(1);
+      setErrors(new Set());
+      triggerSuccess(() => setSubstep(1));
       return;
     }
     if (substep === 1) {
-      if (!data.address1?.trim() || !data.city?.trim() || !data.zip?.trim()) {
-        alert("Please enter street address, city, and ZIP.");
+      if (!data.address1?.trim()) newErrors.add("address1");
+      if (!data.city?.trim()) newErrors.add("city");
+      if (!data.zip?.trim()) newErrors.add("zip");
+
+      if (newErrors.size > 0) {
+        setErrors(newErrors);
         return;
       }
       if (!data.state?.trim()) {
         setLoc({ state: "CA" });
       }
-      setSubstep(2);
+      setErrors(new Set());
+      triggerSuccess(() => setSubstep(2));
       return;
     }
     if (substep === 2) {
-      setSubstep(3);
+      setErrors(new Set());
+      triggerSuccess(() => setSubstep(3));
       return;
     }
     if (!draft.schedule?.pickupDate) {
-      alert("Please select a pickup time.");
+      newErrors.add("schedule");
+      setErrors(newErrors);
       return;
     }
-    setStep(2);
+    setErrors(new Set());
+    triggerSuccess(() => setStep(2));
+  }
+
+  function triggerSuccess(callback: () => void) {
+    setSuccessAnimation(true);
+    setTimeout(() => {
+      setSuccessAnimation(false);
+      callback();
+    }, 400);
   }
 
   function goBack() {
@@ -106,11 +138,25 @@ export default function PickupStep() {
         {substep === 0 && (
           <>
             <div>
-              <label className={label}>Contact name</label>
+              <label className={label}>
+                Contact name
+                {errors.has("name") && (
+                  <span className="ml-2 text-xs font-semibold text-red-600">Required</span>
+                )}
+              </label>
               <input
-                className={field}
+                className={getFieldClass(errors.has("name"), data.name)}
                 value={data.name || ""}
-                onChange={(e) => setLoc({ name: e.target.value })}
+                onChange={(e) => {
+                  setLoc({ name: e.target.value });
+                  if (errors.has("name") && e.target.value.trim()) {
+                    setErrors((prev) => {
+                      const next = new Set(prev);
+                      next.delete("name");
+                      return next;
+                    });
+                  }
+                }}
                 autoComplete="name"
               />
             </div>
@@ -119,20 +165,40 @@ export default function PickupStep() {
               value={data.phone || ""}
               phoneType={data.phoneType}
               onChange={setLoc}
+              error={errors.has("phone")}
+              onErrorClear={() =>
+                setErrors((prev) => {
+                  const next = new Set(prev);
+                  next.delete("phone");
+                  return next;
+                })
+              }
             />
             <div>
-              <label className={label}>Email</label>
+              <label className={label}>
+                Email
+                {errors.has("email") && (
+                  <span className="ml-2 text-xs font-semibold text-red-600">Required</span>
+                )}
+              </label>
               <input
                 type="email"
-                className={field}
+                className={getFieldClass(errors.has("email"), draft.customer.email)}
                 value={draft.customer.email || ""}
-                onChange={(e) =>
+                onChange={(e) => {
                   setDraft((d) => ({
                     ...d,
                     customer: { ...d.customer, email: e.target.value },
                     pickup: { ...d.pickup, email: e.target.value },
-                  }))
-                }
+                  }));
+                  if (errors.has("email") && e.target.value.trim()) {
+                    setErrors((prev) => {
+                      const next = new Set(prev);
+                      next.delete("email");
+                      return next;
+                    });
+                  }
+                }}
                 autoComplete="email"
               />
             </div>
@@ -142,20 +208,48 @@ export default function PickupStep() {
         {substep === 1 && (
           <>
             <div>
-              <label className={label}>Street address</label>
+              <label className={label}>
+                Street address
+                {errors.has("address1") && (
+                  <span className="ml-2 text-xs font-semibold text-red-600">Required</span>
+                )}
+              </label>
               <input
-                className={field}
+                className={getFieldClass(errors.has("address1"), data.address1)}
                 value={data.address1 || ""}
-                onChange={(e) => setLoc({ address1: e.target.value })}
+                onChange={(e) => {
+                  setLoc({ address1: e.target.value });
+                  if (errors.has("address1") && e.target.value.trim()) {
+                    setErrors((prev) => {
+                      const next = new Set(prev);
+                      next.delete("address1");
+                      return next;
+                    });
+                  }
+                }}
                 autoComplete="street-address"
               />
             </div>
             <div>
-              <label className={label}>City</label>
+              <label className={label}>
+                City
+                {errors.has("city") && (
+                  <span className="ml-2 text-xs font-semibold text-red-600">Required</span>
+                )}
+              </label>
               <input
-                className={field}
+                className={getFieldClass(errors.has("city"), data.city)}
                 value={data.city || ""}
-                onChange={(e) => setLoc({ city: e.target.value })}
+                onChange={(e) => {
+                  setLoc({ city: e.target.value });
+                  if (errors.has("city") && e.target.value.trim()) {
+                    setErrors((prev) => {
+                      const next = new Set(prev);
+                      next.delete("city");
+                      return next;
+                    });
+                  }
+                }}
                 autoComplete="address-level2"
               />
             </div>
@@ -163,7 +257,7 @@ export default function PickupStep() {
               <div>
                 <label className={label}>State</label>
                 <input
-                  className={field}
+                  className={getFieldClass(false, data.state)}
                   value={data.state || "CA"}
                   onChange={(e) => setLoc({ state: e.target.value || "CA" })}
                   placeholder="CA"
@@ -171,12 +265,26 @@ export default function PickupStep() {
                 />
               </div>
               <div>
-                <label className={label}>ZIP</label>
+                <label className={label}>
+                  ZIP
+                  {errors.has("zip") && (
+                    <span className="ml-2 text-xs font-semibold text-red-600">Required</span>
+                  )}
+                </label>
                 <input
-                  className={field}
+                  className={getFieldClass(errors.has("zip"), data.zip)}
                   inputMode="numeric"
                   value={data.zip || ""}
-                  onChange={(e) => setLoc({ zip: e.target.value })}
+                  onChange={(e) => {
+                    setLoc({ zip: e.target.value });
+                    if (errors.has("zip") && e.target.value.trim()) {
+                      setErrors((prev) => {
+                        const next = new Set(prev);
+                        next.delete("zip");
+                        return next;
+                      });
+                    }
+                  }}
                   autoComplete="postal-code"
                 />
               </div>
@@ -193,7 +301,7 @@ export default function PickupStep() {
                 <span className="font-normal text-muted">(optional)</span>
               </label>
               <textarea
-                className={field}
+                className={getFieldClass(false)}
                 rows={4}
                 value={data.parkingInstructions || data.accessInstructions || ""}
                 onChange={(e) =>
@@ -212,6 +320,11 @@ export default function PickupStep() {
           <div className="space-y-3">
             <p className="text-sm text-muted">
               Available times for {data.zip || "your area"} (sample schedule for now).
+              {errors.has("schedule") && (
+                <span className="ml-2 font-semibold text-red-600">
+                  Please select a pickup time
+                </span>
+              )}
             </p>
             {PICKUP_SLOTS.map((slot) => {
               const selected =
@@ -221,7 +334,7 @@ export default function PickupStep() {
                 <button
                   key={slot.id}
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     setDraft((d) => ({
                       ...d,
                       schedule: {
@@ -229,18 +342,29 @@ export default function PickupStep() {
                         deliveryDate: slot.deliveryDate,
                         label: slot.label,
                       },
-                    }))
-                  }
+                    }));
+                    if (errors.has("schedule")) {
+                      setErrors((prev) => {
+                        const next = new Set(prev);
+                        next.delete("schedule");
+                        return next;
+                      });
+                    }
+                  }}
                   className={`w-full border px-4 py-4 text-left transition ${
                     selected
-                      ? "border-black ring-2 ring-black"
-                      : "border-black/15 hover:border-black/40"
+                      ? "border-emerald-500 ring-2 ring-emerald-500"
+                      : errors.has("schedule")
+                        ? "border-red-500 animate-input-error"
+                        : "border-black/15 hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.15)]"
                   }`}
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="font-medium">{formatPickupDate(slot.pickupDate)}</p>
                     {selected && (
-                      <span className="text-xs uppercase tracking-wide">Selected</span>
+                      <span className="text-xs uppercase tracking-wide text-emerald-600">
+                        Selected
+                      </span>
                     )}
                   </div>
                   <p className="mt-1 text-sm text-muted">{slot.label}</p>
@@ -263,7 +387,11 @@ export default function PickupStep() {
           type="button"
           onClick={continueNext}
           disabled={substep === 3 && !draft.schedule}
-          className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black disabled:opacity-40"
+          className={`relative border px-8 py-3 text-sm font-medium transition-all disabled:opacity-40 ${
+            successAnimation
+              ? "animate-next-success border-emerald-500 bg-emerald-500 text-white"
+              : "border-black bg-black text-white hover:bg-white hover:text-black"
+          }`}
         >
           Next
         </button>
