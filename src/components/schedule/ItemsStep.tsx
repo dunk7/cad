@@ -33,7 +33,12 @@ function itemLabel(item: OrderItem) {
     if (item.pieceType === "Other wall art" && item.pieceDescription) {
       return item.pieceDescription;
     }
-    if (!item.pieceType || item.pieceType === "Painting or framed artwork") {
+    if (
+      !item.pieceType ||
+      item.pieceType === "Painting" ||
+      item.pieceType === "Painting or framed artwork" ||
+      item.pieceType === "Painting or other framed artwork"
+    ) {
       return "Painting";
     }
     if (item.pieceType === "Other wall art") return "Wall art";

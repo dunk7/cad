@@ -43,7 +43,11 @@ const HARDWARE = [
 
 const SHOW_PHOTO_UPLOAD = false;
 
-const DEFAULT_PIECE_TYPE = "Painting or framed artwork";
+const DEFAULT_PIECE_TYPE = "Painting";
+const LEGACY_PIECE_TYPES = new Set([
+  "Painting or framed artwork",
+  "Painting or other framed artwork",
+]);
 
 const INSTALL_LOCATIONS = [
   "Standard eye or gallery level",
@@ -83,8 +87,14 @@ const label = "mb-1 block text-sm font-medium text-foreground";
 const shellClass =
   "space-y-5 rounded-lg border border-black/10 bg-[#fafafa] p-4 sm:p-6";
 
-function paintingPieceLabel(pieceType: unknown, pieceDescription?: unknown) {
+function normalizePieceType(pieceType: unknown) {
   const type = String(pieceType || DEFAULT_PIECE_TYPE);
+  if (!type || LEGACY_PIECE_TYPES.has(type)) return DEFAULT_PIECE_TYPE;
+  return type;
+}
+
+function paintingPieceLabel(pieceType: unknown, pieceDescription?: unknown) {
+  const type = normalizePieceType(pieceType);
   if (type === DEFAULT_PIECE_TYPE) return "Painting";
   if (type === "Other wall art") {
     const desc = String(pieceDescription || "").trim();
@@ -359,9 +369,9 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
     measureUnit: "in",
     weight: initial?.weight ?? "",
     weightUnit: "lb",
-    pieceType:
-      (initial && "pieceType" in initial ? initial.pieceType : undefined) ||
-      DEFAULT_PIECE_TYPE,
+    pieceType: normalizePieceType(
+      initial && "pieceType" in initial ? initial.pieceType : undefined
+    ),
     specialInstructions: initial?.specialInstructions || "",
     photoUrls: initial?.photoUrls || [],
     existingDamage: initial?.existingDamage || "no",
@@ -513,7 +523,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
       existingDamage: form.existingDamage as "yes" | "no" | "unsure",
       damageNotes: String(form.damageNotes || ""),
       declaredValueDollars: parseDeclared(),
-      pieceType: String(form.pieceType || DEFAULT_PIECE_TYPE),
+      pieceType: normalizePieceType(form.pieceType),
       pieceDescription: String(form.pieceDescription || ""),
       framed: askAboutFrame ? (form.framed as "yes" | "no" | "unsure") : "no",
       frameSizeWeight: askAboutFrame ? String(form.frameSizeWeight || "") : "",
@@ -747,7 +757,7 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
             <label className={label}>What type of piece is this?</label>
             <select
               className={field}
-              value={String(form.pieceType || DEFAULT_PIECE_TYPE)}
+              value={normalizePieceType(form.pieceType)}
               onChange={(e) => set("pieceType", e.target.value)}
             >
               {[
