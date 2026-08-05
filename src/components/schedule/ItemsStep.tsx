@@ -51,6 +51,7 @@ export default function ItemsStep() {
   const [mode, setMode] = useState<Mode>("list");
   const [formCategory, setFormCategory] = useState<CategoryId | null>(null);
   const [editing, setEditing] = useState<OrderItem | null>(null);
+  const [successAnimation, setSuccessAnimation] = useState(false);
 
   const allItems = useMemo(
     () => draft.items.filter((i) => VALID_IDS.has(i.category as CategoryId)),
@@ -257,8 +258,18 @@ export default function ItemsStep() {
           <button
             type="button"
             disabled={!allItems.length}
-            onClick={() => setStep(1)}
-            className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black disabled:opacity-40"
+            onClick={() => {
+              setSuccessAnimation(true);
+              setTimeout(() => {
+                setSuccessAnimation(false);
+                setStep(1);
+              }, 400);
+            }}
+            className={`relative border px-8 py-3 text-sm font-medium transition-all disabled:opacity-40 ${
+              successAnimation
+                ? "animate-next-success border-emerald-500 bg-emerald-500 text-white"
+                : "border-black bg-black text-white hover:bg-white hover:text-black"
+            }`}
           >
             Next
           </button>
