@@ -29,9 +29,10 @@ export default function HomePage() {
           </h1>
           <Link
             href={hero.ctaHref}
-            className="mt-10 inline-flex translate-y-[75px] border-2 border-white bg-white px-12 py-5 text-xl font-semibold tracking-wide text-black transition hover:bg-transparent hover:text-white sm:mt-12 sm:px-16 sm:py-6 sm:text-2xl"
+            className="group relative mt-10 inline-flex translate-y-[75px] overflow-hidden border-4 border-emerald-500 bg-white px-12 py-5 text-xl font-semibold tracking-wide text-black transition hover:scale-105 hover:border-emerald-400 hover:bg-emerald-50 sm:mt-12 sm:px-16 sm:py-6 sm:text-2xl animate-cta-radiant animate-cta-border"
           >
-            {hero.ctaLabel}
+            <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 animate-cta-shimmer" />
+            <span className="relative z-10">{hero.ctaLabel}</span>
           </Link>
         </div>
       </section>

@@ -119,6 +119,63 @@ a {
   animation: progress-energy-spark 2.4s ease-in-out infinite;
 }
 
+/* Gamified CTA button — radiant green border + glow */
+@keyframes cta-radiant-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(16, 185, 129, 0.6),
+      0 0 20px 4px rgba(52, 211, 153, 0.4),
+      inset 0 0 20px 2px rgba(52, 211, 153, 0.15);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(16, 185, 129, 0),
+      0 0 35px 8px rgba(52, 211, 153, 0.7),
+      inset 0 0 30px 4px rgba(52, 211, 153, 0.25);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes cta-border-flow {
+  0%,
+  100% {
+    border-color: rgb(16, 185, 129);
+    opacity: 1;
+  }
+  50% {
+    border-color: rgb(52, 211, 153);
+    opacity: 0.85;
+  }
+}
+
+@keyframes cta-shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+    opacity: 0;
+  }
+}
+
+@utility animate-cta-radiant {
+  animation: cta-radiant-pulse 2s ease-in-out infinite;
+}
+
+@utility animate-cta-border {
+  animation: cta-border-flow 2s ease-in-out infinite;
+}
+
+@utility animate-cta-shimmer {
+  animation: cta-shimmer 3s ease-in-out infinite;
+}
+
 @keyframes install-details-in {
   from {
     opacity: 0;
@@ -155,7 +212,10 @@ a {
   .animate-progress-energy,
   .animate-progress-spark,
   .animate-install-details,
-  .animate-floor-reveal {
+  .animate-floor-reveal,
+  .animate-cta-radiant,
+  .animate-cta-border,
+  .animate-cta-shimmer {
     animation: none !important;
   }
 }
