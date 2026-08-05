@@ -33,17 +33,17 @@ export const testimonials = [
   },
   {
     quote:
-      "California Art Delivery was exceptionally professional! Samantha and Chad were fantastic and I would use their services again for sure for installing artworks.",
-    author: "Client",
+      "California Art Delivery was exceptionally professional! Samantha and Chad were fantastic and I would use their services again for sure for installing artworks. The communication was perfect and delivery time was excellent. Chad was exactly on time and he did a fabulous and meticulous job in helping us to find the right spot and angle for the sculpture. I highly recommend them.",
+    author: "Art Collector in Rancho Santa Fe",
     detail: "",
-    date: "",
+    date: "April 10, 2026",
   },
   {
     quote:
-      "Chad was wonderful and professional. He communicated clearly, he had a great attitude and most importantly he handled our art with like a care of a parent holding their newborn.",
-    author: "Client",
-    detail: "",
-    date: "",
+      "Chad was wonderful and professional. He communicated clearly, he had a great attitude and most importantly he handled our art with like a care of a parent holding their newborn. He is the best.",
+    author: "Tom",
+    detail: "La Quinta",
+    date: "March 27, 2026",
   },
   {
     quote:
@@ -54,17 +54,45 @@ export const testimonials = [
   },
   {
     quote:
-      "We had a wonderful experience with California Art Delivery and would work with them again in a heartbeat. They were communicative about arrival time, super personable, and took great care with our pieces.",
-    author: "Client",
+      "We really appreciate the good service and the communication we received from California Art Delivery Team. Chad & I spoke about future opportunities to move some things we have.",
+    author: "Mark",
+    detail: "Rancho Palos Verdes",
+    date: "March 12, 2026",
+  },
+  {
+    quote:
+      "We had a wonderful experience with California Art Delivery and would work with them again in a heartbeat. They were communicative about arrival time, super personable, and took great care with delivery and unpacking. Thanks for everything.",
+    author: "Daniel",
+    detail: "Art Collector in San Francisco",
+    date: "March 12, 2026",
+  },
+  {
+    quote:
+      "The delivery went well and it was a smooth experience! Definitely a 5 star service experience.",
+    author: "Francisco Aguilar",
     detail: "",
-    date: "",
+    date: "July 6, 2026",
+  },
+  {
+    quote:
+      "Chad & Samantha were terrific They keep me updated all throughout! Will definitely use them again.",
+    author: "Bob Goldberg",
+    detail: "",
+    date: "July 21, 2026",
+  },
+  {
+    quote:
+      "We appreciate the California Art Delivery's excellent communication",
+    author: "Christi Hall",
+    detail: "",
+    date: "July 22, 2026",
   },
 ];
 
 export const intro = {
   heading:
     "We are your trusted experts in delivering fine art, luxury furniture & décor across California and providing global shipping services",
-  body: "We specialize in delivery of fine art, luxury furniture and décor. Our services include performing pickups and deliveries with the utmost care. We also offer competitive shipping rates, providing expert crating and shipping anywhere in the United States and abroad. We serve discerning clients in prestigious California locations, including Napa Valley, Silicon Valley, Carmel-by-the-Sea, Malibu, Beverly Hills, Laguna Beach, and La Jolla. Our philosophy is to ensure every customer feels celebrated — treat every customer like it's their birthday.",
+  body: "We specialize in delivery of fine art, luxury furniture and décor. Our services include performing pickups and deliveries with the utmost care. We also offer competitive shipping rates, providing expert crating and shipping anywhere in the United States and abroad. We serve discerning clients in prestigious California locations, including Napa Valley, Silicon Valley, Carmel-by-the-Sea, Malibu, Beverly Hills, Laguna Beach, and La Jolla. Our philosophy is to ensure every customer feels celebrated and valued, making each experience truly exceptional.",
   image: "/images/home/450585371_122123984648291652_8177886129219223976_n.jpg",
 };
 
@@ -76,7 +104,7 @@ export const serviceAreas = {
       name: "Northern California",
       image: "/images/home/1000003553.jpg",
       places:
-        "St. Helena, Napa, Tiburon, Ross, Sausalito, Presidio Heights, Pacific Heights, Belvedere, Hillsborough, Woodside, Atherton, Menlo Park, Portola Valley, Palo Alto, Los Altos Hills, Saratoga, Monte Sereno, Los Gatos",
+        "St. Helena, Napa, Tiburon, Ross, Sausalito, Presidio Heights, Pacific Heights, Belvedere, Hillsborough, Woodside, Atherton, Menlo Park, Portola Valley, Palo Alto, Los Altos Hills, Saratoga, Monte Sereno, Los Gatos, Santa Cruz, Aptos Hills",
     },
     {
       name: "Central California",
@@ -88,7 +116,7 @@ export const serviceAreas = {
       name: "Southern California",
       image: "/images/home/1000003554.jpg",
       places:
-        "Santa Barbara, Montecito, Hidden Hills, Calabasas, Malibu, Pacific Palisades, Brentwood, Bel Air, Beverly Hills, Los Angeles, Newport Beach, Crystal Cove, Laguna Beach, Dana Point, Palm Springs, Rancho Mirage, La Jolla, San Diego",
+        "Santa Barbara, Montecito, Hidden Hills, Calabasas, Malibu, Pacific Palisades, Brentwood, Bel Air, Beverly Hills, Los Angeles, Newport Beach, Crystal Cove, Laguna Beach, Dana Point, Palm Springs, Rancho Mirage, Palm Desert, Indian Wells, La Quinta, Rancho Santa Fe, Fairbanks Ranch, La Jolla, San Diego",
     },
   ],
 };
