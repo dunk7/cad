@@ -1,15 +1,22 @@
 "use client";
 
 import { formatCents } from "@/lib/money";
+import { requiresManualQuote } from "@/lib/ordering/california";
 import { useOrder } from "@/lib/ordering/OrderContext";
 import { totalDeclaredValueDollars } from "@/lib/ordering/pricing";
 import { useEffect, useMemo, useState } from "react";
+import RewardButton from "./RewardButton";
 
 export default function ReviewStep() {
   const { draft, setDraft, setStep, price } = useOrder();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [declaredPct, setDeclaredPct] = useState(1.5);
+
+  const quoteOnly = useMemo(
+    () => requiresManualQuote(draft.pickup?.state, draft.delivery?.state),
+    [draft.pickup?.state, draft.delivery?.state]
+  );
 
   const declaredTotal = useMemo(
     () => totalDeclaredValueDollars(draft.items),
@@ -28,13 +35,18 @@ export default function ReviewStep() {
       });
   }, []);
 
-  async function pay() {
-    setError("");
+  function canSubmit(): boolean {
     if (!draft.termsAccepted) {
       setError("Please accept the terms to continue.");
-      return;
+      return false;
     }
+    setError("");
+    return true;
+  }
+
+  async function pay() {
     setBusy(true);
+    setError("");
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -46,6 +58,24 @@ export default function ReviewStep() {
       if (data.url) window.location.href = data.url;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Checkout failed");
+      setBusy(false);
+    }
+  }
+
+  async function submitQuoteRequest() {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/quote-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ draft }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not submit quote request");
+      if (data.url) window.location.href = data.url;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not submit quote request");
       setBusy(false);
     }
   }
@@ -126,7 +156,7 @@ export default function ReviewStep() {
           </div>
         </section>
 
-        {declaredTotal > 0 && (
+        {!quoteOnly && declaredTotal > 0 && (
           <section className="border border-black/10 p-4">
             <h2 className="font-medium">Declared value protection</h2>
             <p className="mt-2 text-sm text-muted">
@@ -155,26 +185,36 @@ export default function ReviewStep() {
           </section>
         )}
 
-        <section className="border border-black/10 p-4">
-          <h2 className="font-medium">Price</h2>
-          <ul className="mt-3 space-y-1 text-sm text-muted">
-            {price?.lines.map((l, i) => (
-              <li key={l.code + i} className="flex justify-between gap-4">
-                <span>{l.label}</span>
-                <span>{formatCents(l.amountCents)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 flex justify-between text-lg font-semibold">
-            <span>Total</span>
-            <span>{formatCents(price?.totalCents || 0)}</span>
-          </p>
-          <p className="mt-3 text-xs leading-relaxed text-muted">
-            Pricing is based on the information provided. California Art Delivery may request
-            additional information or revise pricing if the actual item, access conditions,
-            installation requirements, or scope materially differ from the submitted details.
-          </p>
-        </section>
+        {quoteOnly ? (
+          <section className="border border-black/10 p-4">
+            <h2 className="font-medium">Custom quote</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              Thank you for the information. We will review your request and provide a
+              personalized quote within 24 to 48 hours.
+            </p>
+          </section>
+        ) : (
+          <section className="border border-black/10 p-4">
+            <h2 className="font-medium">Price</h2>
+            <ul className="mt-3 space-y-1 text-sm text-muted">
+              {price?.lines.map((l, i) => (
+                <li key={l.code + i} className="flex justify-between gap-4">
+                  <span>{l.label}</span>
+                  <span>{formatCents(l.amountCents)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 flex justify-between text-lg font-semibold">
+              <span>Total</span>
+              <span>{formatCents(price?.totalCents || 0)}</span>
+            </p>
+            <p className="mt-3 text-xs leading-relaxed text-muted">
+              Pricing is based on the information provided. California Art Delivery may request
+              additional information or revise pricing if the actual item, access conditions,
+              installation requirements, or scope materially differ from the submitted details.
+            </p>
+          </section>
+        )}
 
         <label className="flex items-start gap-3 text-sm">
           <input
@@ -189,17 +229,21 @@ export default function ReviewStep() {
             I agree to the{" "}
             <a href="/terms" className="underline" target="_blank">
               Terms of Service
-            </a>{" "}
-            and understand payment is required to confirm this order.
+            </a>
+            {quoteOnly
+              ? " and authorize California Art Delivery to prepare a quote based on this information."
+              : " and understand payment is required to confirm this order."}
           </span>
         </label>
 
-        <div className="rounded-lg border border-black/10 bg-[#f7f7f7] p-4">
-          <p className="font-medium">Pay by bank (ACH)</p>
-          <p className="mt-1 text-sm text-muted">
-            Bank transfer is our preferred payment method.
-          </p>
-        </div>
+        {!quoteOnly && (
+          <div className="rounded-lg border border-black/10 bg-[#f7f7f7] p-4">
+            <p className="font-medium">Pay by bank (ACH)</p>
+            <p className="mt-1 text-sm text-muted">
+              Bank transfer is our preferred payment method.
+            </p>
+          </div>
+        )}
 
         {error && <p className="text-sm text-red-700">{error}</p>}
       </div>
@@ -212,14 +256,23 @@ export default function ReviewStep() {
         >
           Back
         </button>
-        <button
-          type="button"
+        <RewardButton
           disabled={busy}
-          onClick={() => void pay()}
+          shouldReward={canSubmit}
+          onReward={() => {
+            if (quoteOnly) void submitQuoteRequest();
+            else void pay();
+          }}
           className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black disabled:opacity-50"
         >
-          {busy ? "Redirecting…" : "Pay & Confirm"}
-        </button>
+          {busy
+            ? quoteOnly
+              ? "Submitting…"
+              : "Redirecting…"
+            : quoteOnly
+              ? "Submit Quote Request"
+              : "Pay & Confirm"}
+        </RewardButton>
       </div>
     </div>
   );

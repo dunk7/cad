@@ -206,6 +206,154 @@ a {
   animation: floor-reveal-in 0.28s ease-out both;
 }
 
+/* Reward / win burst — dopamine hit on Next & Add Item */
+@keyframes reward-hit {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  18% {
+    transform: scale(0.94);
+    filter: brightness(1.15);
+  }
+  42% {
+    transform: scale(1.08);
+    filter: brightness(1.35);
+    box-shadow:
+      0 0 0 4px rgba(251, 191, 36, 0.55),
+      0 0 28px 10px rgba(16, 185, 129, 0.55),
+      0 0 48px 18px rgba(201, 162, 39, 0.35);
+  }
+  70% {
+    transform: scale(1.02);
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1.1);
+    box-shadow:
+      0 0 0 0 rgba(251, 191, 36, 0),
+      0 0 18px 4px rgba(16, 185, 129, 0.35);
+  }
+}
+
+@keyframes reward-hit-add {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  15% {
+    transform: scale(0.92) rotate(-1deg);
+  }
+  40% {
+    transform: scale(1.1) rotate(1deg);
+    box-shadow:
+      0 0 0 6px rgba(16, 185, 129, 0.5),
+      0 0 36px 14px rgba(52, 211, 153, 0.55),
+      0 0 60px 22px rgba(201, 162, 39, 0.3);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    box-shadow:
+      0 0 0 0 rgba(16, 185, 129, 0),
+      0 0 20px 6px rgba(52, 211, 153, 0.35);
+  }
+}
+
+@keyframes reward-ring-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.4);
+    opacity: 0;
+  }
+}
+
+@keyframes reward-ring-expand-slow {
+  0% {
+    transform: translate(-50%, -50%) scale(0.55);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4.2);
+    opacity: 0;
+  }
+}
+
+@keyframes reward-particle-fly {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--reward-angle)) translateY(0)
+      scale(1);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--reward-angle))
+      translateY(calc(var(--reward-dist) * -1)) scale(0.15);
+    opacity: 0;
+  }
+}
+
+@keyframes reward-sheen-sweep {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(220%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+@keyframes reward-plus-float {
+  0% {
+    transform: translate(-50%, 0) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(-50%, -10px) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -36px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+@utility animate-reward-hit {
+  animation: reward-hit 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@utility animate-reward-hit-add {
+  animation: reward-hit-add 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@utility animate-reward-ring {
+  animation: reward-ring-expand 0.52s ease-out forwards;
+}
+
+@utility animate-reward-ring-slow {
+  animation: reward-ring-expand-slow 0.58s ease-out forwards;
+}
+
+@utility animate-reward-particle {
+  animation: reward-particle-fly 0.55s cubic-bezier(0.15, 0.75, 0.35, 1) forwards;
+}
+
+@utility animate-reward-sheen {
+  animation: reward-sheen-sweep 0.48s ease-out forwards;
+}
+
+@utility animate-reward-plus {
+  animation: reward-plus-float 0.52s ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-progress-orb,
   .animate-progress-ring,
@@ -215,7 +363,14 @@ a {
   .animate-floor-reveal,
   .animate-cta-radiant,
   .animate-cta-border,
-  .animate-cta-shimmer {
+  .animate-cta-shimmer,
+  .animate-reward-hit,
+  .animate-reward-hit-add,
+  .animate-reward-ring,
+  .animate-reward-ring-slow,
+  .animate-reward-particle,
+  .animate-reward-sheen,
+  .animate-reward-plus {
     animation: none !important;
   }
 }

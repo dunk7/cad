@@ -48,6 +48,7 @@ export default async function AdminOrdersPage({
             <option value="">All statuses</option>
             <option value="paid">Paid</option>
             <option value="pending_payment">Pending payment</option>
+            <option value="quote_pending">Quote pending</option>
             <option value="payment_failed">Payment failed</option>
           </select>
           <button
@@ -140,9 +141,11 @@ function StatusBadge({
   const color =
     status === "paid"
       ? "bg-emerald-100 text-emerald-900"
-      : status === "payment_failed"
-        ? "bg-red-100 text-red-900"
-        : "bg-neutral-100 text-neutral-800";
+      : status === "quote_pending"
+        ? "bg-amber-100 text-amber-900"
+        : status === "payment_failed"
+          ? "bg-red-100 text-red-900"
+          : "bg-neutral-100 text-neutral-800";
   return (
     <div>
       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>

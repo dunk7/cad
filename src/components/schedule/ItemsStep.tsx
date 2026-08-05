@@ -7,6 +7,7 @@ import { useOrder } from "@/lib/ordering/OrderContext";
 import type { CategoryId, OrderItem } from "@/lib/ordering/types";
 import { useMemo, useState } from "react";
 import ItemForm from "./ItemForm";
+import RewardButton from "./RewardButton";
 
 const VALID_IDS = new Set<CategoryId>(CATEGORIES.map((c) => c.id));
 
@@ -112,14 +113,10 @@ export default function ItemsStep() {
 
       {mode === "list" && allItems.length === 0 && (
         <div className="mt-10 flex flex-col items-center">
-          <button
-            type="button"
-            onClick={startAdd}
-            className="inline-flex items-center gap-2.5 bg-black px-12 py-4 text-base font-medium text-white transition hover:bg-neutral-800 sm:px-14 sm:py-5 sm:text-lg"
-          >
+          <RewardButton intensity="add" onReward={startAdd}>
             <PlusIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             Add an Item
-          </button>
+          </RewardButton>
         </div>
       )}
 
@@ -166,14 +163,14 @@ export default function ItemsStep() {
             );
           })}
 
-          <button
-            type="button"
-            onClick={startAdd}
+          <RewardButton
+            intensity="add"
+            onReward={startAdd}
             className="inline-flex w-full items-center justify-center gap-2 border border-dashed border-black/30 py-4 text-sm font-medium outline-none transition duration-200 hover:border-transparent hover:shadow-[0_0_0_6px_#16a34a,0_0_20px_8px_rgba(22,163,74,0.45),0_0_40px_16px_rgba(22,163,74,0.25)] focus-visible:border-transparent focus-visible:shadow-[0_0_0_6px_#16a34a,0_0_20px_8px_rgba(22,163,74,0.45),0_0_40px_16px_rgba(22,163,74,0.25)]"
           >
             <PlusIcon />
             Add Another Item
-          </button>
+          </RewardButton>
         </div>
       )}
 
@@ -259,14 +256,13 @@ export default function ItemsStep() {
           >
             Back
           </Link>
-          <button
-            type="button"
+          <RewardButton
             disabled={!allItems.length}
-            onClick={() => setStep(1)}
-            className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black disabled:opacity-40"
+            shouldReward={() => allItems.length > 0}
+            onReward={() => setStep(1)}
           >
             Next
-          </button>
+          </RewardButton>
         </div>
       )}
     </div>

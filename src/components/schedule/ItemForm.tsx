@@ -4,6 +4,7 @@ import { DECOR_NAMES, FURNITURE_NAMES, SIZE_CLASSES } from "@/lib/ordering/catal
 import type { CategoryId, OrderItem, WeightUnit } from "@/lib/ordering/types";
 import { useOrder } from "@/lib/ordering/OrderContext";
 import { useMemo, useRef, useState } from "react";
+import RewardButton from "./RewardButton";
 
 const FRAME_CHARS = [
   "Ornate",
@@ -414,41 +415,41 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   }
 
-  function goToPaintingDetails() {
+  function canGoToPaintingDetails(): boolean {
     if (!Number.isFinite(widthIn) || !Number.isFinite(heightIn) || widthIn <= 0 || heightIn <= 0) {
       alert("Please enter width and height in inches.");
-      return;
+      return false;
     }
     if (form.weight === "" || !Number.isFinite(Number(form.weight)) || Number(form.weight) < 0) {
       alert("Please enter an approximate weight in pounds.");
-      return;
+      return false;
     }
-    goToPaintingPage(2);
+    return true;
   }
 
-  function goToPaintingExtras() {
+  function canGoToPaintingExtras(): boolean {
     if (
       form.pieceType === "Other wall art" &&
       !String(form.pieceDescription || "").trim()
     ) {
       alert("Please describe this wall art.");
-      return;
+      return false;
     }
     if (
       form.currentWrapping === "Other" &&
       !String(form.currentWrappingOther || "").trim()
     ) {
       alert("Please explain how the piece is wrapped or prepared.");
-      return;
+      return false;
     }
     if (
       form.hardware === "Other" &&
       !String(form.hardwareOther || "").trim()
     ) {
       alert("Please explain what hardware is attached.");
-      return;
+      return false;
     }
-    goToPaintingPage(3);
+    return true;
   }
 
   function parseDeclared() {
@@ -461,11 +462,11 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
     return n;
   }
 
-  function savePainting() {
+  function canSavePainting(): boolean {
     const installChoice = form.installChoice;
     if (installChoice !== "yes" && installChoice !== "no") {
       alert("Please choose Yes or No for installation.");
-      return;
+      return false;
     }
     const install = installChoice === "yes";
     const installLocation = String(
@@ -478,26 +479,26 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         !String(form.installLocationOther || "").trim()
       ) {
         alert("Please explain where this piece will be installed.");
-        return;
+        return false;
       }
       if (
         installNeedsHeight(installLocation) &&
         !String(form.installHeight || "").trim()
       ) {
         alert("Please enter the height from the floor to the bottom of the piece.");
-        return;
+        return false;
       }
       if (installLocation === "In a stairwell") {
         if (!String(form.stairType || "").trim()) {
           alert("Please tell us what the staircase looks like.");
-          return;
+          return false;
         }
         if (
           form.stairType === "Other" &&
           !String(form.stairTypeOther || "").trim()
         ) {
           alert("Please briefly describe the staircase.");
-          return;
+          return false;
         }
       }
       if (
@@ -505,9 +506,19 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         !String(form.wallMaterialOther || "").trim()
       ) {
         alert("Please explain the wall material.");
-        return;
+        return false;
       }
     }
+    return true;
+  }
+
+  function savePainting() {
+    if (!canSavePainting()) return;
+    const installChoice = form.installChoice;
+    const install = installChoice === "yes";
+    const installLocation = String(
+      form.installLocation || "Standard eye or gallery level"
+    );
 
     const item: OrderItem = {
       id: String(form.id),
@@ -575,8 +586,43 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
     onSave(item);
   }
 
-  function saveOther(e: React.FormEvent) {
-    e.preventDefault();
+  function canSaveOther(): boolean {
+    if (category === "sculptures") {
+      if (!String(form.description || "").trim()) {
+        alert("Please describe the sculpture.");
+        return false;
+      }
+      const depth = form.depth === "" ? undefined : Number(form.depth);
+      if (depth == null || Number.isNaN(depth)) {
+        alert("Depth is required for sculptures.");
+        return false;
+      }
+      if (
+        form.currentWrapping === "Other" &&
+        !String(form.currentWrappingOther || "").trim()
+      ) {
+        alert("Please explain how the piece is wrapped or prepared.");
+        return false;
+      }
+    }
+    if (category !== "other") {
+      const height = form.height === "" ? undefined : Number(form.height);
+      const width = form.width === "" ? undefined : Number(form.width);
+      if (
+        height == null ||
+        width == null ||
+        Number.isNaN(height) ||
+        Number.isNaN(width)
+      ) {
+        alert("Height and width are required.");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function saveOther() {
+    if (!canSaveOther()) return;
     const base = {
       id: String(form.id),
       category,
@@ -596,21 +642,6 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
 
     let item: OrderItem;
     if (category === "sculptures") {
-      if (!String(form.description || "").trim()) {
-        alert("Please describe the sculpture.");
-        return;
-      }
-      if (base.depth == null || Number.isNaN(base.depth)) {
-        alert("Depth is required for sculptures.");
-        return;
-      }
-      if (
-        form.currentWrapping === "Other" &&
-        !String(form.currentWrappingOther || "").trim()
-      ) {
-        alert("Please explain how the piece is wrapped or prepared.");
-        return;
-      }
       item = {
         ...base,
         category: "sculptures",
@@ -652,17 +683,6 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         material: String(form.material || ""),
         serviceNeeded: String(form.serviceNeeded || ""),
       };
-    }
-
-    if (
-      category !== "other" &&
-      (item.height == null ||
-        item.width == null ||
-        Number.isNaN(item.height) ||
-        Number.isNaN(item.width))
-    ) {
-      alert("Height and width are required.");
-      return;
     }
 
     onSave(item);
@@ -736,13 +756,13 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
             >
               Back
             </button>
-            <button
-              type="button"
-              onClick={goToPaintingDetails}
+            <RewardButton
+              shouldReward={canGoToPaintingDetails}
+              onReward={() => goToPaintingPage(2)}
               className="border border-black bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-white hover:text-black"
             >
               Next
-            </button>
+            </RewardButton>
           </div>
         </div>
       );
@@ -938,13 +958,13 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
             >
               Back
             </button>
-            <button
-              type="button"
-              onClick={goToPaintingExtras}
+            <RewardButton
+              shouldReward={canGoToPaintingExtras}
+              onReward={() => goToPaintingPage(3)}
               className="border border-black bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-white hover:text-black"
             >
               Next
-            </button>
+            </RewardButton>
           </div>
         </div>
       );
@@ -1139,13 +1159,13 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
           >
             Back
           </button>
-          <button
-            type="button"
-            onClick={savePainting}
+          <RewardButton
+            shouldReward={canSavePainting}
+            onReward={savePainting}
             className="border border-black bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-white hover:text-black"
           >
             Next
-          </button>
+          </RewardButton>
         </div>
       </div>
     );
@@ -1153,7 +1173,12 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
 
   // ——— Other categories ———
   return (
-    <form onSubmit={saveOther} className={shellClass}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+      }}
+      className={shellClass}
+    >
       {category === "sculptures" && (
         <div>
           <label className={label}>What type of sculpture or object is this?</label>
@@ -1417,12 +1442,13 @@ export default function ItemForm({ category, initial, onSave, onCancel }: Props)
         >
           Back
         </button>
-        <button
-          type="submit"
+        <RewardButton
+          shouldReward={canSaveOther}
+          onReward={saveOther}
           className="border border-black bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-white hover:text-black"
         >
           Next
-        </button>
+        </RewardButton>
       </div>
     </form>
   );

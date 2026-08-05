@@ -5,6 +5,7 @@ import { useOrder } from "@/lib/ordering/OrderContext";
 import type { LocationDetails } from "@/lib/ordering/types";
 import FloorAccessFields from "@/components/schedule/FloorAccessFields";
 import PhoneField from "@/components/schedule/PhoneField";
+import RewardButton from "@/components/schedule/RewardButton";
 import { useEffect, useState } from "react";
 
 const field =
@@ -51,32 +52,37 @@ export default function PickupStep() {
     }));
   }
 
-  function continueNext() {
+  function canContinue(): boolean {
     if (substep === 0) {
       if (!data.name?.trim() || !data.phone?.trim() || !draft.customer.email?.trim()) {
         alert("Please enter contact name, phone, and email.");
-        return;
+        return false;
       }
-      setSubstep(1);
-      return;
+      return true;
     }
     if (substep === 1) {
       if (!data.address1?.trim() || !data.city?.trim() || !data.zip?.trim()) {
         alert("Please enter street address, city, and ZIP.");
-        return;
+        return false;
       }
       if (!data.state?.trim()) {
         setLoc({ state: "CA" });
       }
-      setSubstep(2);
-      return;
+      return true;
     }
     if (substep === 2) {
-      setSubstep(3);
-      return;
+      return true;
     }
     if (!draft.schedule?.pickupDate) {
       alert("Please select a pickup time.");
+      return false;
+    }
+    return true;
+  }
+
+  function advance() {
+    if (substep < 3) {
+      setSubstep((s) => s + 1);
       return;
     }
     setStep(2);
@@ -259,14 +265,13 @@ export default function PickupStep() {
         >
           Back
         </button>
-        <button
-          type="button"
-          onClick={continueNext}
+        <RewardButton
+          shouldReward={canContinue}
+          onReward={advance}
           disabled={substep === 3 && !draft.schedule}
-          className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black disabled:opacity-40"
         >
           Next
-        </button>
+        </RewardButton>
       </div>
     </div>
   );

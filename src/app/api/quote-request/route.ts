@@ -4,7 +4,6 @@ import { getAppConfig } from "@/lib/ordering/config";
 import { calculatePrice, totalDeclaredValueDollars } from "@/lib/ordering/pricing";
 import { evaluateAlerts } from "@/lib/ordering/alerts";
 import { requiresManualQuote } from "@/lib/ordering/california";
-import { getStripe, stripeConfigured } from "@/lib/stripe";
 import type { DraftOrder } from "@/lib/ordering/types";
 import { randomUUID } from "crypto";
 
@@ -16,6 +15,10 @@ function orderNumber() {
   return `CAD-${stamp}-${randomUUID().slice(0, 6).toUpperCase()}`;
 }
 
+/**
+ * Submit a scheduling request that needs a manual quote (non-California
+ * pickup or delivery). Persists the draft for ops follow-up — no Stripe.
+ */
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as { draft: DraftOrder };
   const draft = body.draft;
@@ -28,29 +31,22 @@ export async function POST(req: NextRequest) {
   if (!draft.termsAccepted) {
     return NextResponse.json({ error: "Please accept the terms" }, { status: 400 });
   }
-  if (requiresManualQuote(draft.pickup?.state, draft.delivery?.state)) {
+  if (!requiresManualQuote(draft.pickup?.state, draft.delivery?.state)) {
     return NextResponse.json(
-      {
-        error:
-          "This request needs a custom quote. Please submit a quote request instead of paying online.",
-      },
+      { error: "This route is eligible for instant checkout" },
       { status: 400 }
     );
   }
 
   const { pricing } = await getAppConfig();
   const price = calculatePrice(draft, pricing);
-  if (price.totalCents < 50) {
-    return NextResponse.json({ error: "Order total too low" }, { status: 400 });
-  }
-
   const alerts = evaluateAlerts(draft, pricing);
   const number = orderNumber();
 
-  const order = await prisma.order.create({
+  await prisma.order.create({
     data: {
       orderNumber: number,
-      status: "pending_payment",
+      status: "quote_pending",
       customerName: draft.customer.name,
       customerEmail: draft.customer.email,
       customerPhone: draft.customer.phone || null,
@@ -63,59 +59,13 @@ export async function POST(req: NextRequest) {
       declaredValueCents: Math.round(totalDeclaredValueDollars(draft.items) * 100),
       totalCents: price.totalCents,
       termsAcceptedAt: new Date(),
+      paymentMethod: "quote_request",
     },
   });
 
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-
-  if (!stripeConfigured()) {
-    // Dev fallback: mark paid without Stripe so local flow is testable
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { status: "paid", paymentMethod: "ach_simulated" },
-    });
-    return NextResponse.json({
-      url: `${site}/schedule/confirmation?order=${order.orderNumber}`,
-      simulated: true,
-    });
-  }
-
-  const stripe = getStripe();
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    customer_email: draft.customer.email,
-    // ACH first; card secondary
-    payment_method_types: ["us_bank_account", "card"],
-    payment_method_options: {
-      us_bank_account: {
-        financial_connections: { permissions: ["payment_method"] },
-      },
-    },
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: "usd",
-          unit_amount: price.totalCents,
-          product_data: {
-            name: `California Art Delivery — ${number}`,
-            description: "White-glove delivery service (ACH preferred)",
-          },
-        },
-      },
-    ],
-    metadata: {
-      orderId: order.id,
-      orderNumber: number,
-    },
-    success_url: `${site}/schedule/confirmation?order=${number}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${site}/schedule?step=review&canceled=1`,
+  return NextResponse.json({
+    url: `${site}/schedule/confirmation?order=${number}&quote=1`,
+    quotePending: true,
   });
-
-  await prisma.order.update({
-    where: { id: order.id },
-    data: { stripeSessionId: session.id },
-  });
-
-  return NextResponse.json({ url: session.url });
 }

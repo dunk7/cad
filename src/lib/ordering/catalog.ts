@@ -78,5 +78,5 @@ export const WIZARD_STEPS = [
   "Items",
   "Pickup",
   "Delivery",
-  "Payment",
+  "Review",
 ] as const;

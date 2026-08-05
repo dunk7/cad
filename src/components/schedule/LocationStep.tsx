@@ -4,6 +4,7 @@ import { useOrder } from "@/lib/ordering/OrderContext";
 import type { LocationDetails } from "@/lib/ordering/types";
 import FloorAccessFields from "@/components/schedule/FloorAccessFields";
 import PhoneField from "@/components/schedule/PhoneField";
+import RewardButton from "@/components/schedule/RewardButton";
 import { useEffect } from "react";
 
 const field =
@@ -30,12 +31,12 @@ export default function LocationStep() {
     }));
   }
 
-  function continueNext() {
+  function canContinue(): boolean {
     if (!data.name || !data.phone || !data.address1 || !data.city || !data.zip) {
       alert("Please complete name, phone, address, city, and ZIP.");
-      return;
+      return false;
     }
-    setStep(3);
+    return true;
   }
 
   return (
@@ -128,13 +129,9 @@ export default function LocationStep() {
         >
           Back
         </button>
-        <button
-          type="button"
-          onClick={continueNext}
-          className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black"
-        >
+        <RewardButton shouldReward={canContinue} onReward={() => setStep(3)}>
           Next
-        </button>
+        </RewardButton>
       </div>
     </div>
   );
