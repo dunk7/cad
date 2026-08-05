@@ -10,6 +10,8 @@ export default function ReviewStep() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [declaredPct, setDeclaredPct] = useState(1.5);
+  const [termsError, setTermsError] = useState(false);
+  const [successAnimation, setSuccessAnimation] = useState(false);
 
   const declaredTotal = useMemo(
     () => totalDeclaredValueDollars(draft.items),
@@ -30,10 +32,16 @@ export default function ReviewStep() {
 
   async function pay() {
     setError("");
+    setTermsError(false);
     if (!draft.termsAccepted) {
       setError("Please accept the terms to continue.");
+      setTermsError(true);
       return;
     }
+    setSuccessAnimation(true);
+    setTimeout(() => {
+      setSuccessAnimation(false);
+    }, 600);
     setBusy(true);
     try {
       const res = await fetch("/api/checkout", {
@@ -176,16 +184,28 @@ export default function ReviewStep() {
           </p>
         </section>
 
-        <label className="flex items-start gap-3 text-sm">
+        <label
+          className={`flex items-start gap-3 text-sm transition-all ${
+            termsError ? "animate-input-error" : ""
+          }`}
+        >
           <input
             type="checkbox"
-            className="mt-1"
+            className={`mt-1 transition-all ${
+              termsError
+                ? "outline outline-2 outline-red-500 outline-offset-2"
+                : ""
+            }`}
             checked={draft.termsAccepted}
-            onChange={(e) =>
-              setDraft((d) => ({ ...d, termsAccepted: e.target.checked }))
-            }
+            onChange={(e) => {
+              setDraft((d) => ({ ...d, termsAccepted: e.target.checked }));
+              if (e.target.checked && termsError) {
+                setTermsError(false);
+                setError("");
+              }
+            }}
           />
-          <span>
+          <span className={termsError ? "text-red-700 font-medium" : ""}>
             I agree to the{" "}
             <a href="/terms" className="underline" target="_blank">
               Terms of Service
@@ -216,7 +236,11 @@ export default function ReviewStep() {
           type="button"
           disabled={busy}
           onClick={() => void pay()}
-          className="border border-black bg-black px-8 py-3 text-sm font-medium text-white hover:bg-white hover:text-black disabled:opacity-50"
+          className={`relative border px-8 py-3 text-sm font-medium transition-all disabled:opacity-50 ${
+            successAnimation
+              ? "animate-next-success border-emerald-500 bg-emerald-500 text-white"
+              : "border-black bg-black text-white hover:bg-white hover:text-black"
+          }`}
         >
           {busy ? "Redirecting…" : "Pay & Confirm"}
         </button>

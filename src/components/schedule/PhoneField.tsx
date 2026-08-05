@@ -2,9 +2,16 @@
 
 import type { LocationDetails } from "@/lib/ordering/types";
 
-const field =
-  "w-full border border-black/20 bg-white px-3 py-2.5 text-sm outline-none focus:border-black";
 const labelClass = "text-sm font-medium";
+
+function getFieldClass(error: boolean) {
+  const base =
+    "w-full border bg-white px-3 py-2.5 text-sm outline-none transition-all duration-200";
+  if (error) {
+    return `${base} border-red-500 animate-input-error`;
+  }
+  return `${base} border-black/20 focus:border-emerald-500 focus:animate-input-focus`;
+}
 
 export type PhoneType = NonNullable<LocationDetails["phoneType"]>;
 
@@ -19,12 +26,16 @@ export default function PhoneField({
   phoneType,
   onChange,
   autoComplete = "tel",
+  error = false,
+  onErrorClear,
 }: {
   id?: string;
   value: string;
   phoneType: PhoneType | "" | undefined;
   onChange: (patch: { phone?: string; phoneType?: PhoneType }) => void;
   autoComplete?: string;
+  error?: boolean;
+  onErrorClear?: () => void;
 }) {
   const selected: PhoneType =
     phoneType === "landline" || phoneType === "cell" ? phoneType : "cell";
@@ -35,6 +46,7 @@ export default function PhoneField({
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <label className={labelClass} htmlFor={id}>
           Phone
+          {error && <span className="ml-2 text-xs font-semibold text-red-600">Required</span>}
         </label>
         <div
           className="inline-flex overflow-hidden border border-black/20 bg-white"
@@ -75,9 +87,14 @@ export default function PhoneField({
         id={id}
         type="tel"
         inputMode="tel"
-        className={field}
+        className={getFieldClass(error)}
         value={value}
-        onChange={(e) => onChange({ phone: e.target.value })}
+        onChange={(e) => {
+          onChange({ phone: e.target.value });
+          if (error && e.target.value.trim() && onErrorClear) {
+            onErrorClear();
+          }
+        }}
         autoComplete={autoComplete}
         aria-describedby={hintId}
       />
