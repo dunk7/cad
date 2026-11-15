@@ -6,11 +6,10 @@
  *   Sun south-of-Carmel corridor or Central Valley
  *
  * Week B (SoCal week):
- *   Mon LA · Tue OC→San Diego · Wed Coachella · Thu Newport/Laguna/OC
+ *   Mon LA · Tue Coachella/Palm Desert · Wed San Diego · Thu Newport/Laguna/OC
  *   Fri–Sun off
  *
- * Epoch Monday 2026-11-02 starts Week A so the week of 2026-11-09 is Week B
- * (San Diego on that Tuesday), matching the described cycle.
+ * Epoch Monday 2026-11-16 starts Week A (northbound): LA Monday, Carmel Tuesday, etc.
  */
 
 export type RouteRegionId =
@@ -36,7 +35,7 @@ export type ServiceDay = {
 };
 
 /** Monday that begins a Week A cycle (America/Los_Angeles calendar). */
-export const ROUTE_CYCLE_EPOCH_MONDAY = "2026-11-02";
+export const ROUTE_CYCLE_EPOCH_MONDAY = "2026-11-16";
 
 const WEEKDAY_NAMES = [
   "Sunday",
@@ -303,11 +302,11 @@ export function regionsServedOnDate(iso: string): RouteRegionId[] {
   switch (weekday) {
     case 1: // Mon
       return ["la"];
-    case 2: // Tue — Orange County down through San Diego
-      return ["orange_county", "san_diego"];
-    case 3: // Wed
+    case 2: // Tue — Coachella / Palm Desert / Palm Springs
       return ["coachella"];
-    case 4: // Thu — back in Newport / Laguna / OC
+    case 3: // Wed — San Diego
+      return ["san_diego"];
+    case 4: // Thu — Newport / Laguna / OC
       return ["orange_county"];
     case 5:
     case 6:
