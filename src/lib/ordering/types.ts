@@ -132,6 +132,7 @@ export type LocationDetails = {
 
 export type ScheduleSelection = {
   pickupDate: string;
+  /** Set on the delivery step from the delivery ZIP’s route days. */
   deliveryDate: string;
   label?: string;
 };

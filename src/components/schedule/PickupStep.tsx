@@ -155,8 +155,8 @@ export default function PickupStep() {
       ...d,
       schedule: {
         pickupDate: day.date,
-        // Delivery date is refined after delivery ZIP is entered.
-        deliveryDate: d.schedule?.deliveryDate || day.date,
+        // Delivery date is chosen separately from the delivery ZIP’s route days.
+        deliveryDate: "",
         label: day.label,
       },
       pickup: { ...d.pickup, region: day.regionId },
