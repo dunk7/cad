@@ -131,9 +131,15 @@ export default function ReviewStep() {
             </p>
             {draft.schedule?.pickupDate && (
               <p className="mt-3 border-t border-black/10 pt-3 text-foreground">
-                {draft.schedule.label || "Pickup"}
+                Pickup date
                 <br />
                 <span className="text-muted">{draft.schedule.pickupDate}</span>
+                {draft.schedule.label && (
+                  <>
+                    <br />
+                    <span className="text-muted">{draft.schedule.label}</span>
+                  </>
+                )}
               </p>
             )}
           </div>
@@ -153,6 +159,13 @@ export default function ReviewStep() {
               <br />
               {draft.delivery.city}, {draft.delivery.state} {draft.delivery.zip}
             </p>
+            {draft.schedule?.deliveryDate && (
+              <p className="mt-3 border-t border-black/10 pt-3 text-foreground">
+                Delivery date
+                <br />
+                <span className="text-muted">{draft.schedule.deliveryDate}</span>
+              </p>
+            )}
           </div>
         </section>
 
