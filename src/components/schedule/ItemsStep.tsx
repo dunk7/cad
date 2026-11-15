@@ -185,7 +185,7 @@ export default function ItemsStep() {
                 key={cat.id}
                 type="button"
                 onClick={() => pickCategory(cat.id)}
-                className="group relative aspect-[4/3] overflow-hidden text-left outline-none transition duration-200 shadow-[0_0_0_1px_rgba(0,0,0,0.12)] hover:shadow-[0_0_0_6px_#16a34a,0_0_20px_8px_rgba(22,163,74,0.45),0_0_40px_16px_rgba(22,163,74,0.25)] focus-visible:shadow-[0_0_0_6px_#16a34a,0_0_20px_8px_rgba(22,163,74,0.45),0_0_40px_16px_rgba(22,163,74,0.25)]"
+                className="group relative aspect-[4/3] overflow-hidden text-left outline-none transition duration-200 shadow-[0_0_0_1px_rgba(0,0,0,0.12)] hover:shadow-[0_0_0_3px_#16a34a,0_0_12px_4px_rgba(22,163,74,0.35)] focus-visible:shadow-[0_0_0_3px_#16a34a,0_0_12px_4px_rgba(22,163,74,0.35)]"
               >
                 <Image
                   src={cat.image}
