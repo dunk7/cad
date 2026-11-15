@@ -140,29 +140,5 @@ export type RouteSlot = {
   regions?: string[];
 };
 
-export const defaultRouteSlots: RouteSlot[] = [
-  {
-    id: "r1",
-    pickupDate: "2026-08-04",
-    deliveryDate: "2026-08-06",
-    label: "NorCal / Central corridor",
-  },
-  {
-    id: "r2",
-    pickupDate: "2026-08-05",
-    deliveryDate: "2026-08-07",
-    label: "SoCal coastal route",
-  },
-  {
-    id: "r3",
-    pickupDate: "2026-08-11",
-    deliveryDate: "2026-08-13",
-    label: "Statewide mid-week",
-  },
-  {
-    id: "r4",
-    pickupDate: "2026-08-12",
-    deliveryDate: "2026-08-15",
-    label: "Bay Area → LA",
-  },
-];
+/** Legacy admin reference slots. Live customer dates come from routeCalendar. */
+export const defaultRouteSlots: RouteSlot[] = [];

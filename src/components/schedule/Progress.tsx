@@ -34,7 +34,7 @@ export default function Progress({ step }: { step: number }) {
   const total = WIZARD_STEPS.length;
 
   return (
-    <nav aria-label="Order progress" className="mx-auto max-w-3xl">
+    <nav aria-label="Order progress" className="mx-auto max-w-3xl overflow-x-clip">
       <ol className="flex w-full items-start pb-8">
         {WIZARD_STEPS.map((label, i) => {
           const done = i < current;
@@ -46,9 +46,9 @@ export default function Progress({ step }: { step: number }) {
           return (
             <li
               key={label}
-              className={`flex items-start ${i < total - 1 ? "flex-1" : ""}`}
+              className={`flex min-w-0 items-start ${i < total - 1 ? "flex-1" : ""}`}
             >
-              <div className="relative flex shrink-0 flex-col items-center">
+              <div className="relative flex w-10 shrink-0 flex-col items-center sm:w-12">
                 {active && (
                   <span
                     className="animate-progress-ring pointer-events-none absolute inset-0 rounded-full border-2 border-emerald-400/70"
@@ -74,7 +74,7 @@ export default function Progress({ step }: { step: number }) {
                   )}
                 </span>
                 <span
-                  className={`pointer-events-none absolute top-[calc(100%+0.5rem)] left-1/2 w-max max-w-[4.75rem] -translate-x-1/2 text-center text-[10px] leading-tight sm:max-w-none sm:text-[11px] sm:uppercase sm:tracking-[0.1em] ${
+                  className={`pointer-events-none absolute top-[calc(100%+0.5rem)] left-1/2 w-[4.5rem] -translate-x-1/2 truncate text-center text-[10px] leading-tight sm:w-[5.5rem] sm:text-[11px] sm:uppercase sm:tracking-[0.08em] ${
                     active
                       ? "font-semibold text-foreground"
                       : done

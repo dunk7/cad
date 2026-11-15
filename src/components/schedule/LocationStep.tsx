@@ -2,18 +2,50 @@
 
 import { useOrder } from "@/lib/ordering/OrderContext";
 import type { LocationDetails } from "@/lib/ordering/types";
+import {
+  normalizeZip,
+  type ServiceDay,
+} from "@/lib/ordering/routeCalendar";
 import FloorAccessFields from "@/components/schedule/FloorAccessFields";
 import PhoneField from "@/components/schedule/PhoneField";
 import RewardButton from "@/components/schedule/RewardButton";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const field =
   "w-full border border-black/20 bg-white px-3 py-2.5 text-sm outline-none focus:border-black";
 const label = "mb-1 block text-sm font-medium";
 
+function formatServiceDate(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 export default function LocationStep() {
   const { draft, setDraft, setStep } = useOrder();
   const data = draft.delivery;
+  const pickupDate = draft.schedule?.pickupDate;
+  const [days, setDays] = useState<ServiceDay[]>([]);
+  const [regionLabel, setRegionLabel] = useState("");
+  const [scheduleError, setScheduleError] = useState("");
+  const [contactRequired, setContactRequired] = useState(false);
+  const [loadingDays, setLoadingDays] = useState(false);
+
+  const deliveryZip = normalizeZip(data.zip);
+  const selectedDeliveryDate = draft.schedule?.deliveryDate;
+  const deliveryDateValid = useMemo(
+    () =>
+      Boolean(
+        selectedDeliveryDate &&
+          days.some((day) => day.date === selectedDeliveryDate)
+      ),
+    [days, selectedDeliveryDate]
+  );
 
   useEffect(() => {
     if (!data.state?.trim()) {
@@ -24,16 +56,118 @@ export default function LocationStep() {
     }
   }, [data.state, setDraft]);
 
+  useEffect(() => {
+    if (deliveryZip.length < 5 || !pickupDate) {
+      setDays([]);
+      setRegionLabel("");
+      setContactRequired(false);
+      if (deliveryZip.length >= 5 && !pickupDate) {
+        setScheduleError("Select a pickup date first.");
+      } else {
+        setScheduleError("");
+      }
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingDays(true);
+    setScheduleError("");
+    setContactRequired(false);
+    void fetch(
+      `/api/schedule?zip=${encodeURIComponent(deliveryZip)}&after=${encodeURIComponent(pickupDate)}&min=3`
+    )
+      .then((r) => r.json())
+      .then((payload) => {
+        if (cancelled) return;
+        const nextDays: ServiceDay[] = payload.days || [];
+        setDays(nextDays);
+        setRegionLabel(payload.regionLabel || "");
+        setContactRequired(Boolean(payload.contactRequired));
+
+        // Drop a leftover pickup-date (or other invalid) delivery selection.
+        setDraft((d) => {
+          const current = d.schedule?.deliveryDate;
+          const ok = current && nextDays.some((day) => day.date === current);
+          if (ok || !d.schedule) return d;
+          return {
+            ...d,
+            schedule: {
+              ...d.schedule,
+              deliveryDate: "",
+            },
+          };
+        });
+
+        if (payload.contactRequired) {
+          setScheduleError(
+            payload.error ||
+              "This ZIP is outside our regular routes. Please contact us for a custom schedule."
+          );
+        } else if (!nextDays.length) {
+          setScheduleError(
+            "No delivery route days found for this ZIP after your pickup date. Contact us for a custom schedule."
+          );
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setDays([]);
+        setContactRequired(false);
+        setScheduleError("Could not load delivery dates. Please try again.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDays(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deliveryZip, pickupDate, setDraft]);
+
   function setLoc(patch: Partial<LocationDetails>) {
+    setDraft((d) => {
+      const zipChanged =
+        patch.zip !== undefined &&
+        normalizeZip(patch.zip) !== normalizeZip(d.delivery.zip);
+      return {
+        ...d,
+        delivery: { ...d.delivery, ...patch },
+        schedule:
+          zipChanged && d.schedule
+            ? { ...d.schedule, deliveryDate: "" }
+            : d.schedule,
+      };
+    });
+  }
+
+  function selectDeliveryDay(day: ServiceDay) {
     setDraft((d) => ({
       ...d,
-      delivery: { ...d.delivery, ...patch },
+      schedule: d.schedule
+        ? {
+            ...d.schedule,
+            deliveryDate: day.date,
+          }
+        : {
+            pickupDate: day.date,
+            deliveryDate: day.date,
+            label: day.label,
+          },
+      delivery: { ...d.delivery, region: day.regionId },
     }));
   }
 
   function canContinue(): boolean {
     if (!data.name || !data.phone || !data.address1 || !data.city || !data.zip) {
       alert("Please complete name, phone, address, city, and ZIP.");
+      return false;
+    }
+    if (deliveryZip.length < 5) {
+      alert("Please enter a valid 5-digit ZIP code.");
+      return false;
+    }
+    if (!deliveryDateValid) {
+      alert("Please select a delivery date for this ZIP’s route day.");
       return false;
     }
     return true;
@@ -45,7 +179,8 @@ export default function LocationStep() {
         Delivery details
       </h1>
       <p className="mt-2 text-center text-muted">
-        Tell us where to go and who to contact on site.
+        Enter the delivery ZIP, then choose a route day for that area (same
+        two-week calendar as pickup).
       </p>
 
       <div className="mx-auto mt-8 max-w-xl space-y-4">
@@ -100,6 +235,62 @@ export default function LocationStep() {
             />
           </div>
         </div>
+
+        <div className="space-y-3 border border-black/10 bg-[#fafafa] p-4">
+          <h2 className="text-sm font-medium">Delivery date</h2>
+          <p className="text-sm text-muted">
+            {pickupDate
+              ? `On or after pickup ${formatServiceDate(pickupDate)}.`
+              : "Select a pickup date first."}{" "}
+            {regionLabel
+              ? `Showing route days for ${deliveryZip} · ${regionLabel}.`
+              : deliveryZip.length >= 5
+                ? "Loading region…"
+                : "Enter a 5-digit ZIP to see dates."}
+          </p>
+          {loadingDays && (
+            <p className="text-sm text-muted">Loading delivery dates…</p>
+          )}
+          {scheduleError && !loadingDays && (
+            <p className="text-sm text-red-700">{scheduleError}</p>
+          )}
+          {contactRequired && !loadingDays && (
+            <a
+              href="/contact"
+              className="inline-flex border border-black bg-black px-5 py-3 text-sm font-medium text-white hover:bg-white hover:text-black"
+            >
+              Contact us for a custom schedule
+            </a>
+          )}
+          {!loadingDays &&
+            !contactRequired &&
+            days.map((day) => {
+              const selected = selectedDeliveryDate === day.date;
+              return (
+                <button
+                  key={`${day.date}-${day.regionId}`}
+                  type="button"
+                  onClick={() => selectDeliveryDay(day)}
+                  className={`w-full border bg-white px-4 py-4 text-left transition ${
+                    selected
+                      ? "border-black ring-2 ring-black"
+                      : "border-black/15 hover:border-black/40"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="font-medium">{formatServiceDate(day.date)}</p>
+                    {selected && (
+                      <span className="text-xs uppercase tracking-wide">
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm text-muted">{day.label}</p>
+                </button>
+              );
+            })}
+        </div>
+
         <FloorAccessFields kind="delivery" data={data} onChange={setLoc} />
         <div>
           <label className={label}>
@@ -129,7 +320,11 @@ export default function LocationStep() {
         >
           Back
         </button>
-        <RewardButton shouldReward={canContinue} onReward={() => setStep(3)}>
+        <RewardButton
+          shouldReward={canContinue}
+          onReward={() => setStep(3)}
+          disabled={!deliveryDateValid}
+        >
           Next
         </RewardButton>
       </div>

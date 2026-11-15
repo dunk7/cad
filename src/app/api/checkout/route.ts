@@ -28,7 +28,14 @@ export async function POST(req: NextRequest) {
   if (!draft.termsAccepted) {
     return NextResponse.json({ error: "Please accept the terms" }, { status: 400 });
   }
-  if (requiresManualQuote(draft.pickup?.state, draft.delivery?.state)) {
+  if (
+    requiresManualQuote(
+      draft.pickup?.state,
+      draft.delivery?.state,
+      draft.pickup?.zip,
+      draft.delivery?.zip
+    )
+  ) {
     return NextResponse.json(
       {
         error:

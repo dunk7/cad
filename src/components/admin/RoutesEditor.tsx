@@ -32,7 +32,8 @@ export default function RoutesEditor() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Route dates</h1>
           <p className="mt-1 text-sm text-muted">
-            Placeholder availability until full statewide route logic (Part 3) is added.
+            Customer scheduling now uses the ZIP-based two-week route calendar.
+            These slots are retained for reference / overrides only.
           </p>
         </div>
         <div className="flex items-center gap-3">

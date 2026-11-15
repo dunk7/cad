@@ -17,7 +17,7 @@ function orderNumber() {
 
 /**
  * Submit a scheduling request that needs a manual quote (non-California
- * pickup or delivery). Persists the draft for ops follow-up — no Stripe.
+ * ends, or ZIPs outside the regular two-week route). No Stripe.
  */
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as { draft: DraftOrder };
@@ -31,7 +31,14 @@ export async function POST(req: NextRequest) {
   if (!draft.termsAccepted) {
     return NextResponse.json({ error: "Please accept the terms" }, { status: 400 });
   }
-  if (!requiresManualQuote(draft.pickup?.state, draft.delivery?.state)) {
+  if (
+    !requiresManualQuote(
+      draft.pickup?.state,
+      draft.delivery?.state,
+      draft.pickup?.zip,
+      draft.delivery?.zip
+    )
+  ) {
     return NextResponse.json(
       { error: "This route is eligible for instant checkout" },
       { status: 400 }

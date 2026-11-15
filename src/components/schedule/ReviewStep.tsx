@@ -14,8 +14,19 @@ export default function ReviewStep() {
   const [declaredPct, setDeclaredPct] = useState(1.5);
 
   const quoteOnly = useMemo(
-    () => requiresManualQuote(draft.pickup?.state, draft.delivery?.state),
-    [draft.pickup?.state, draft.delivery?.state]
+    () =>
+      requiresManualQuote(
+        draft.pickup?.state,
+        draft.delivery?.state,
+        draft.pickup?.zip,
+        draft.delivery?.zip
+      ),
+    [
+      draft.pickup?.state,
+      draft.delivery?.state,
+      draft.pickup?.zip,
+      draft.delivery?.zip,
+    ]
   );
 
   const declaredTotal = useMemo(
@@ -131,9 +142,15 @@ export default function ReviewStep() {
             </p>
             {draft.schedule?.pickupDate && (
               <p className="mt-3 border-t border-black/10 pt-3 text-foreground">
-                {draft.schedule.label || "Pickup"}
+                Pickup date
                 <br />
                 <span className="text-muted">{draft.schedule.pickupDate}</span>
+                {draft.schedule.label && (
+                  <>
+                    <br />
+                    <span className="text-muted">{draft.schedule.label}</span>
+                  </>
+                )}
               </p>
             )}
           </div>
@@ -153,6 +170,13 @@ export default function ReviewStep() {
               <br />
               {draft.delivery.city}, {draft.delivery.state} {draft.delivery.zip}
             </p>
+            {draft.schedule?.deliveryDate && (
+              <p className="mt-3 border-t border-black/10 pt-3 text-foreground">
+                Delivery date
+                <br />
+                <span className="text-muted">{draft.schedule.deliveryDate}</span>
+              </p>
+            )}
           </div>
         </section>
 
@@ -189,8 +213,13 @@ export default function ReviewStep() {
           <section className="border border-black/10 p-4">
             <h2 className="font-medium">Custom quote</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Thank you for the information. We will review your request and provide a
-              personalized quote within 24 to 48 hours.
+              This pickup or delivery is outside our regular two-week California route
+              (or outside California). We will review your request and provide a
+              personalized quote within 24 to 48 hours. You can also{" "}
+              <a href="/contact" className="underline hover:text-foreground">
+                contact us
+              </a>{" "}
+              directly.
             </p>
           </section>
         ) : (
