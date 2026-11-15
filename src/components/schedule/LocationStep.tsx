@@ -33,6 +33,7 @@ export default function LocationStep() {
   const [days, setDays] = useState<ServiceDay[]>([]);
   const [regionLabel, setRegionLabel] = useState("");
   const [scheduleError, setScheduleError] = useState("");
+  const [contactRequired, setContactRequired] = useState(false);
   const [loadingDays, setLoadingDays] = useState(false);
 
   const deliveryZip = normalizeZip(data.zip);
@@ -59,6 +60,7 @@ export default function LocationStep() {
     if (deliveryZip.length < 5 || !pickupDate) {
       setDays([]);
       setRegionLabel("");
+      setContactRequired(false);
       if (deliveryZip.length >= 5 && !pickupDate) {
         setScheduleError("Select a pickup date first.");
       } else {
@@ -70,6 +72,7 @@ export default function LocationStep() {
     let cancelled = false;
     setLoadingDays(true);
     setScheduleError("");
+    setContactRequired(false);
     void fetch(
       `/api/schedule?zip=${encodeURIComponent(deliveryZip)}&after=${encodeURIComponent(pickupDate)}&min=3`
     )
@@ -79,6 +82,7 @@ export default function LocationStep() {
         const nextDays: ServiceDay[] = payload.days || [];
         setDays(nextDays);
         setRegionLabel(payload.regionLabel || "");
+        setContactRequired(Boolean(payload.contactRequired));
 
         // Drop a leftover pickup-date (or other invalid) delivery selection.
         setDraft((d) => {
@@ -94,7 +98,12 @@ export default function LocationStep() {
           };
         });
 
-        if (!nextDays.length) {
+        if (payload.contactRequired) {
+          setScheduleError(
+            payload.error ||
+              "This ZIP is outside our regular routes. Please contact us for a custom schedule."
+          );
+        } else if (!nextDays.length) {
           setScheduleError(
             "No delivery route days found for this ZIP after your pickup date. Contact us for a custom schedule."
           );
@@ -103,6 +112,7 @@ export default function LocationStep() {
       .catch(() => {
         if (cancelled) return;
         setDays([]);
+        setContactRequired(false);
         setScheduleError("Could not load delivery dates. Please try again.");
       })
       .finally(() => {
@@ -244,7 +254,16 @@ export default function LocationStep() {
           {scheduleError && !loadingDays && (
             <p className="text-sm text-red-700">{scheduleError}</p>
           )}
+          {contactRequired && !loadingDays && (
+            <a
+              href="/contact"
+              className="inline-flex border border-black bg-black px-5 py-3 text-sm font-medium text-white hover:bg-white hover:text-black"
+            >
+              Contact us for a custom schedule
+            </a>
+          )}
           {!loadingDays &&
+            !contactRequired &&
             days.map((day) => {
               const selected = selectedDeliveryDate === day.date;
               return (

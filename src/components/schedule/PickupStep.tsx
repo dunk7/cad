@@ -33,6 +33,7 @@ export default function PickupStep() {
   const [days, setDays] = useState<ServiceDay[]>([]);
   const [regionLabel, setRegionLabel] = useState("");
   const [scheduleError, setScheduleError] = useState("");
+  const [contactRequired, setContactRequired] = useState(false);
   const [loadingDays, setLoadingDays] = useState(false);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function PickupStep() {
     if (zip.length < 5) {
       setDays([]);
       setRegionLabel("");
+      setContactRequired(false);
       setScheduleError("Enter a 5-digit ZIP to see pickup dates for your area.");
       return;
     }
@@ -57,13 +59,20 @@ export default function PickupStep() {
     let cancelled = false;
     setLoadingDays(true);
     setScheduleError("");
+    setContactRequired(false);
     void fetch(`/api/schedule?zip=${encodeURIComponent(zip)}&min=3`)
       .then((r) => r.json())
       .then((payload) => {
         if (cancelled) return;
         setDays(payload.days || []);
         setRegionLabel(payload.regionLabel || "");
-        if (!payload.days?.length) {
+        setContactRequired(Boolean(payload.contactRequired));
+        if (payload.contactRequired) {
+          setScheduleError(
+            payload.error ||
+              "This ZIP is outside our regular routes. Please contact us for a custom schedule."
+          );
+        } else if (!payload.days?.length) {
           setScheduleError(
             "No route days found for this ZIP in the next few weeks. Try another ZIP or contact us for a custom schedule."
           );
@@ -72,6 +81,7 @@ export default function PickupStep() {
       .catch(() => {
         if (cancelled) return;
         setDays([]);
+        setContactRequired(false);
         setScheduleError("Could not load available dates. Please try again.");
       })
       .finally(() => {
@@ -294,7 +304,16 @@ export default function PickupStep() {
             {scheduleError && !loadingDays && (
               <p className="text-sm text-red-700">{scheduleError}</p>
             )}
+            {contactRequired && !loadingDays && (
+              <a
+                href="/contact"
+                className="inline-flex border border-black bg-black px-5 py-3 text-sm font-medium text-white hover:bg-white hover:text-black"
+              >
+                Contact us for a custom schedule
+              </a>
+            )}
             {!loadingDays &&
+              !contactRequired &&
               days.map((day) => {
                 const selected = draft.schedule?.pickupDate === day.date;
                 return (

@@ -1,3 +1,8 @@
+import {
+  isOutOfRouteRegion,
+  regionForZip,
+} from "@/lib/ordering/routeCalendar";
+
 /** Normalize and detect California for pickup/delivery eligibility. */
 export function isCaliforniaState(state: string | undefined | null): boolean {
   const normalized = (state || "").trim().toLowerCase().replace(/\./g, "");
@@ -17,9 +22,23 @@ export function isCaliforniaRoute(
   return isCaliforniaState(pickupState) && isCaliforniaState(deliveryState);
 }
 
+/** ZIP is outside the two-week route footprint (north of Tahoe, east of Fresno, etc.). */
+export function isOutOfRouteZip(zip: string | undefined | null): boolean {
+  return isOutOfRouteRegion(regionForZip(zip));
+}
+
+/**
+ * Needs a custom quote / contact-us flow: non-CA ends, or either ZIP is
+ * outside regular route coverage.
+ */
 export function requiresManualQuote(
   pickupState: string | undefined | null,
-  deliveryState: string | undefined | null
+  deliveryState: string | undefined | null,
+  pickupZip?: string | undefined | null,
+  deliveryZip?: string | undefined | null
 ): boolean {
-  return !isCaliforniaRoute(pickupState, deliveryState);
+  if (!isCaliforniaRoute(pickupState, deliveryState)) return true;
+  if (pickupZip && isOutOfRouteZip(pickupZip)) return true;
+  if (deliveryZip && isOutOfRouteZip(deliveryZip)) return true;
+  return false;
 }

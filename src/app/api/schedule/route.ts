@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   availableServiceDaysForZip,
+  isOutOfRouteRegion,
   normalizeZip,
   regionForZip,
   REGION_LABELS,
@@ -17,12 +18,27 @@ export async function GET(req: Request) {
       zip,
       regionId: "unknown",
       regionLabel: REGION_LABELS.unknown,
+      contactRequired: false,
       days: [],
       error: "Enter a 5-digit ZIP code to see available dates.",
     });
   }
 
   const regionId = regionForZip(zip);
+  const contactRequired = isOutOfRouteRegion(regionId);
+
+  if (contactRequired) {
+    return NextResponse.json({
+      zip,
+      regionId,
+      regionLabel: REGION_LABELS[regionId],
+      contactRequired: true,
+      days: [],
+      error:
+        "This ZIP is outside our regular two-week route (for example north of Tahoe or east of Fresno). Please contact us for a custom schedule.",
+    });
+  }
+
   const days = availableServiceDaysForZip({
     zip,
     fromDate: after,
@@ -35,6 +51,7 @@ export async function GET(req: Request) {
     zip,
     regionId,
     regionLabel: REGION_LABELS[regionId],
+    contactRequired: false,
     days,
   });
 }

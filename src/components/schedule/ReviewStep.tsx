@@ -14,8 +14,19 @@ export default function ReviewStep() {
   const [declaredPct, setDeclaredPct] = useState(1.5);
 
   const quoteOnly = useMemo(
-    () => requiresManualQuote(draft.pickup?.state, draft.delivery?.state),
-    [draft.pickup?.state, draft.delivery?.state]
+    () =>
+      requiresManualQuote(
+        draft.pickup?.state,
+        draft.delivery?.state,
+        draft.pickup?.zip,
+        draft.delivery?.zip
+      ),
+    [
+      draft.pickup?.state,
+      draft.delivery?.state,
+      draft.pickup?.zip,
+      draft.delivery?.zip,
+    ]
   );
 
   const declaredTotal = useMemo(
@@ -202,8 +213,13 @@ export default function ReviewStep() {
           <section className="border border-black/10 p-4">
             <h2 className="font-medium">Custom quote</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Thank you for the information. We will review your request and provide a
-              personalized quote within 24 to 48 hours.
+              This pickup or delivery is outside our regular two-week California route
+              (or outside California). We will review your request and provide a
+              personalized quote within 24 to 48 hours. You can also{" "}
+              <a href="/contact" className="underline hover:text-foreground">
+                contact us
+              </a>{" "}
+              directly.
             </p>
           </section>
         ) : (

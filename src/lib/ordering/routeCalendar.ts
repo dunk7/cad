@@ -2,14 +2,17 @@
  * Two-week California route calendar.
  *
  * Week A (Carmel / NorCal week):
- *   Mon LA · Tue Carmel · Wed–Fri San Jose+ · Thu–Fri SF/north · Sat Carmel
- *   Sun south-of-Carmel corridor or Central Valley
+ *   Mon LA · Tue Carmel · Wed–Fri San Jose+ · Thu–Fri SF/Stockton/north · Sat Carmel
+ *   Sun Carmel→LA central corridor (coast) and Fresno
  *
  * Week B (SoCal week):
- *   Mon LA · Tue Coachella/Palm Desert · Wed San Diego · Thu Newport/Laguna/OC
+ *   Mon LA · Tue Coachella/Palm Desert · Wed San Diego (incl. Temecula) · Thu Newport/Laguna/OC
  *   Fri–Sun off
  *
  * Epoch Monday 2026-11-16 starts Week A (northbound): LA Monday, Carmel Tuesday, etc.
+ *
+ * Out of regular routes (custom contact / quote):
+ *   north of Tahoe, far north CA, east of Fresno (eastern Sierra / high desert).
  */
 
 export type RouteRegionId =
@@ -22,6 +25,7 @@ export type RouteRegionId =
   | "orange_county"
   | "san_diego"
   | "coachella"
+  | "out_of_route"
   | "unknown";
 
 export type ServiceDay = {
@@ -50,28 +54,30 @@ const WEEKDAY_NAMES = [
 export const REGION_LABELS: Record<RouteRegionId, string> = {
   carmel: "Carmel / Monterey Peninsula",
   sj_corridor: "San Jose & north of Carmel",
-  sf_north: "San Francisco & further north",
-  central_coast: "Central Coast (south of Carmel)",
-  central_valley: "Central Valley",
+  sf_north: "Bay Area, Stockton & further north",
+  central_coast: "Central California (Carmel → LA corridor)",
+  central_valley: "Fresno area",
   la: "Los Angeles",
   orange_county: "Orange County / Newport / Laguna",
-  san_diego: "San Diego",
+  san_diego: "San Diego / Temecula",
   coachella: "Coachella Valley",
+  out_of_route: "Outside regular routes",
   unknown: "California (unmapped)",
 };
 
-/** Representative ZIP used for nearest-region matching. */
-const REGION_ANCHORS: { region: RouteRegionId; zip: number }[] = [
-  { region: "carmel", zip: 93923 },
-  { region: "sj_corridor", zip: 95113 },
-  { region: "sf_north", zip: 94102 },
-  { region: "central_coast", zip: 93101 },
-  { region: "central_valley", zip: 93721 },
-  { region: "la", zip: 90012 },
-  { region: "orange_county", zip: 92651 },
-  { region: "san_diego", zip: 92101 },
-  { region: "coachella", zip: 92262 },
-];
+/** Representative ZIP used for nearest-region matching (covered areas only). */
+const REGION_ANCHORS: { region: Exclude<RouteRegionId, "out_of_route" | "unknown">; zip: number }[] =
+  [
+    { region: "carmel", zip: 93923 },
+    { region: "sj_corridor", zip: 95113 },
+    { region: "sf_north", zip: 94102 },
+    { region: "central_coast", zip: 93101 },
+    { region: "central_valley", zip: 93721 },
+    { region: "la", zip: 90012 },
+    { region: "orange_county", zip: 92651 },
+    { region: "san_diego", zip: 92101 },
+    { region: "coachella", zip: 92262 },
+  ];
 
 function parseIsoDate(iso: string): { y: number; m: number; d: number } | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
@@ -118,6 +124,52 @@ export function normalizeZip(zip: string | undefined | null): string {
   return digits.slice(0, 5);
 }
 
+export function isOutOfRouteRegion(region: RouteRegionId): boolean {
+  return region === "out_of_route";
+}
+
+/** Temecula / Murrieta — served on San Diego day. */
+function isTemeculaMurrieta(n: number): boolean {
+  return (
+    (n >= 92590 && n <= 92593) ||
+    (n >= 92562 && n <= 92564) ||
+    n === 92596 // Winchester
+  );
+}
+
+/**
+ * Outside the two-week route footprint → custom contact / quote.
+ * North of Tahoe / far north, and east of Fresno (eastern Sierra / high desert).
+ */
+function isOutOfRouteZip(n: number, prefix3: number): boolean {
+  // Far north coast (Humboldt / Del Norte)
+  if (prefix3 === 955) return true;
+
+  // North of Tahoe / far northeast (Redding, Alturas, Susanville, etc.)
+  if (prefix3 === 960) return true;
+
+  // 961: Tahoe basin is on-route (sf_north); everything north of Tahoe is not
+  if (prefix3 === 961) {
+    // South Lake Tahoe / Tahoe / Truckee corridor
+    if (
+      (n >= 96140 && n <= 96148) ||
+      (n >= 96150 && n <= 96158) ||
+      (n >= 96160 && n <= 96162)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  // East of Fresno — eastern Sierra / high desert (Bishop, Mammoth, Ridgecrest, Mojave…)
+  if (prefix3 === 935) return true;
+
+  // Bakersfield / south valley — not on Carmel→LA Sunday corridor or Fresno Sunday run
+  if (prefix3 === 932 || prefix3 === 933) return true;
+
+  return false;
+}
+
 /**
  * Map a CA ZIP to a route region using known prefixes, then nearest anchor.
  */
@@ -128,6 +180,10 @@ export function regionForZip(zipInput: string | undefined | null): RouteRegionId
   if (!Number.isFinite(n)) return "unknown";
 
   const prefix3 = Math.floor(n / 100);
+
+  if (n < 90001 || n > 96162) return "unknown";
+
+  if (isOutOfRouteZip(n, prefix3)) return "out_of_route";
 
   // Carmel / Monterey Peninsula (not Big Sur 93920)
   if (
@@ -145,13 +201,16 @@ export function regionForZip(zipInput: string | undefined | null): RouteRegionId
     return "carmel";
   }
 
-  // Big Sur + San Luis Obispo / Santa Barbara / Ventura corridor
+  // Central California coast corridor: Big Sur → SLO → Santa Barbara → Ventura (toward LA)
   if (n === 93920 || prefix3 === 934 || prefix3 === 931 || prefix3 === 930) {
     return "central_coast";
   }
 
   // Coachella / desert
   if (prefix3 === 922) return "coachella";
+
+  // Temecula / Murrieta → San Diego day
+  if (isTemeculaMurrieta(n)) return "san_diego";
 
   // San Diego
   if (prefix3 === 919 || prefix3 === 920 || prefix3 === 921) return "san_diego";
@@ -161,43 +220,27 @@ export function regionForZip(zipInput: string | undefined | null): RouteRegionId
     return "orange_county";
   }
 
-  // LA basin
+  // LA basin (incl. much of 925 Inland Empire that isn't Temecula)
   if (
     (prefix3 >= 900 && prefix3 <= 918) ||
-    prefix3 === 902 ||
-    prefix3 === 903 ||
-    prefix3 === 904 ||
-    prefix3 === 905 ||
-    prefix3 === 907 ||
-    prefix3 === 908 ||
-    prefix3 === 910 ||
-    prefix3 === 911 ||
-    prefix3 === 912 ||
-    prefix3 === 913 ||
-    prefix3 === 914 ||
-    prefix3 === 915 ||
-    prefix3 === 916 ||
-    prefix3 === 917 ||
-    prefix3 === 918
+    prefix3 === 925
   ) {
     return "la";
   }
 
-  // Central Valley (Fresno, Bakersfield, Stockton, Modesto, etc.)
-  if (
-    (prefix3 >= 932 && prefix3 <= 937) ||
-    prefix3 === 952 ||
-    prefix3 === 953 ||
-    prefix3 === 956 ||
-    prefix3 === 957 ||
-    prefix3 === 958 ||
-    prefix3 === 959
-  ) {
-    // 956–958 Sacramento is more "SF further north" geographically for routing
-    if (prefix3 === 956 || prefix3 === 957 || prefix3 === 958) {
-      return "sf_north";
-    }
+  // Fresno area only for Sunday "central" valley stop — NOT Stockton/Modesto
+  if (prefix3 === 936 || prefix3 === 937) {
     return "central_valley";
+  }
+
+  // Stockton, Modesto, Merced — Bay Area / north Thu–Fri corridor (not central CA)
+  if (prefix3 === 952 || prefix3 === 953) {
+    return "sf_north";
+  }
+
+  // Sacramento metro — Thu/Fri with SF/north
+  if (prefix3 === 956 || prefix3 === 957 || prefix3 === 958 || prefix3 === 959) {
+    return "sf_north";
   }
 
   // San Jose / South Bay / Santa Cruz / Peninsula (north of Carmel, not SF)
@@ -207,7 +250,7 @@ export function regionForZip(zipInput: string | undefined | null): RouteRegionId
     prefix3 === 940 ||
     prefix3 === 943 ||
     prefix3 === 944 ||
-    n === 94536 || // Fremont / South Bay edge — treat as SJ corridor
+    n === 94536 ||
     n === 94538 ||
     n === 94539 ||
     n === 94555 ||
@@ -217,7 +260,7 @@ export function regionForZip(zipInput: string | undefined | null): RouteRegionId
     return "sj_corridor";
   }
 
-  // San Francisco + North Bay / East Bay / further north
+  // San Francisco + North Bay / East Bay / Wine Country (on-route north)
   if (
     prefix3 === 941 ||
     prefix3 === 946 ||
@@ -225,29 +268,31 @@ export function regionForZip(zipInput: string | undefined | null): RouteRegionId
     prefix3 === 948 ||
     prefix3 === 949 ||
     prefix3 === 945 ||
-    prefix3 === 954 ||
-    prefix3 === 955 ||
-    prefix3 === 960 ||
-    prefix3 === 961
+    prefix3 === 954
   ) {
     return "sf_north";
   }
 
-  // Remaining CA ZIPs (900–961): nearest anchor
-  if (n >= 90001 && n <= 96162) {
-    let best: RouteRegionId = "unknown";
-    let bestDist = Infinity;
-    for (const anchor of REGION_ANCHORS) {
-      const dist = Math.abs(anchor.zip - n);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = anchor.region;
-      }
-    }
-    return best;
+  // Tahoe basin (not north of Tahoe) — Thu/Fri with north routes
+  if (
+    (n >= 96140 && n <= 96148) ||
+    (n >= 96150 && n <= 96158) ||
+    (n >= 96160 && n <= 96162)
+  ) {
+    return "sf_north";
   }
 
-  return "unknown";
+  // Remaining CA ZIPs: nearest covered anchor
+  let best: RouteRegionId = "unknown";
+  let bestDist = Infinity;
+  for (const anchor of REGION_ANCHORS) {
+    const dist = Math.abs(anchor.zip - n);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = anchor.region;
+    }
+  }
+  return best;
 }
 
 export type CycleDayInfo = {
@@ -261,7 +306,6 @@ export function cycleInfoForDate(iso: string): CycleDayInfo {
   const epoch = civilDateUtc(ROUTE_CYCLE_EPOCH_MONDAY);
   const day = civilDateUtc(iso);
   const diffDays = Math.round((day.getTime() - epoch.getTime()) / 86_400_000);
-  // Floor-divide that works for negative offsets
   const mod = ((diffDays % 14) + 14) % 14;
   return {
     week: mod < 7 ? "A" : "B",
@@ -275,7 +319,6 @@ export function cycleInfoForDate(iso: string): CycleDayInfo {
  */
 export function regionsServedOnDate(iso: string): RouteRegionId[] {
   const { week, weekday } = cycleInfoForDate(iso);
-  // weekday: 0 Sun, 1 Mon, 2 Tue, 3 Wed, 4 Thu, 5 Fri, 6 Sat
 
   if (week === "A") {
     switch (weekday) {
@@ -291,27 +334,26 @@ export function regionsServedOnDate(iso: string): RouteRegionId[] {
         return ["sj_corridor", "sf_north"];
       case 6: // Sat
         return ["carmel"];
-      case 0: // Sun
+      case 0: // Sun — coast corridor Carmel→LA + Fresno
         return ["central_coast", "central_valley"];
       default:
         return [];
     }
   }
 
-  // Week B
   switch (weekday) {
     case 1: // Mon
       return ["la"];
-    case 2: // Tue — Coachella / Palm Desert / Palm Springs
+    case 2: // Tue — Coachella / Palm Desert
       return ["coachella"];
-    case 3: // Wed — San Diego
+    case 3: // Wed — San Diego / Temecula
       return ["san_diego"];
     case 4: // Thu — Newport / Laguna / OC
       return ["orange_county"];
     case 5:
     case 6:
     case 0:
-      return []; // usually off
+      return [];
     default:
       return [];
   }
@@ -325,7 +367,7 @@ function labelFor(iso: string, region: RouteRegionId, week: "A" | "B"): string {
 /**
  * Upcoming service days for a ZIP.
  * Default window is ~3 weeks; extends until at least `minOptions` dates
- * (or `maxHorizonDays` is hit).
+ * (or `maxHorizonDays` is hit). Out-of-route ZIPs return no days.
  */
 export function availableServiceDaysForZip(options: {
   zip: string;
@@ -337,6 +379,9 @@ export function availableServiceDaysForZip(options: {
 }): ServiceDay[] {
   const region = regionForZip(options.zip);
   if (region === "unknown" && normalizeZip(options.zip).length < 5) {
+    return [];
+  }
+  if (region === "out_of_route") {
     return [];
   }
 
@@ -355,19 +400,15 @@ export function availableServiceDaysForZip(options: {
       const date = addDaysIso(from, i);
       if (date < from) continue;
       const served = regionsServedOnDate(date);
-      // Unknown CA ZIPs: still try nearest region
-      const matchRegion =
-        region === "unknown" ? regionForZip(options.zip) : region;
-      if (!served.includes(matchRegion) && matchRegion !== "unknown") continue;
-      if (matchRegion === "unknown") continue;
+      if (!served.includes(region)) continue;
 
       const { week } = cycleInfoForDate(date);
       results.push({
         date,
         weekday: WEEKDAY_NAMES[weekdayIndex(date)],
-        regionId: matchRegion,
-        regionLabel: REGION_LABELS[matchRegion],
-        label: labelFor(date, matchRegion, week),
+        regionId: region,
+        regionLabel: REGION_LABELS[region],
+        label: labelFor(date, region, week),
         week,
       });
     }
